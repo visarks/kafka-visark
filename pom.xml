@@ -57,5 +57,28 @@
             <version>11.6.0</version>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.gitee.podigua</groupId>
+                <artifactId>maven-jfx-plugin</artifactId>
+                <version>0.0.4</version>
+                <configuration>
+                    <name>Kafka-Visark</name>
+                    <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
+                    <vendor>破地瓜</vendor>
+                    <appVersion>2.3.0</appVersion>
+                    <aboutUrl>https://www.visark.net/kafka</aboutUrl>
+                    <copyright>Copyright©2024 破地瓜. 版权所有</copyright>
+                    <description>kafka连接工具</description>
+                    <winDirChooser>true</winDirChooser>
+                    <winMenu>true</winMenu>
+                    <winShortcut>true</winShortcut>
+                    <winPerUserInstall>true</winPerUserInstall>
+                    <winShortcutPrompt>true</winShortcutPrompt>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
