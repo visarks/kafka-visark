@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<AnchorPane stylesheets="@../css/main.css" prefHeight="360.0" prefWidth="643.0" xmlns="http://javafx.com/javafx/20.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.podigua.kafka.visark.setting.controller.SettingController">
+    <children>
+        <AnchorPane fx:id="center" layoutX="20.0" layoutY="10.0" prefHeight="200.0" prefWidth="200.0"
+                    AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="0.0"
+                    AnchorPane.topAnchor="10.0"/>
+    </children>
+</AnchorPane>

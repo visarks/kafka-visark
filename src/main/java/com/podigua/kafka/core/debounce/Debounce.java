@@ -1,0 +1,84 @@
+package com.podigua.kafka.core.debounce;
+
+
+import com.podigua.kafka.core.thread.NamedThreadFactory;
+
+import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 防抖函数
+ *
+ * @author podigua
+ * @date 2023/06/07
+ */
+public class Debounce {
+    /**
+     * 核心池大小
+     */
+    private static final Integer CORE_POOL_SIZE = 1;
+    /**
+     * 线程前缀
+     */
+    private static final String THREAD_PREFIX = "debounce";
+    /**
+     * 调度
+     */
+    private ScheduledExecutorService executorService;
+    /**
+     * 调度返回值
+     */
+    private ScheduledFuture<?> scheduledFuture;
+    /**
+     * 持续时间
+     */
+    private final Duration duration;
+
+    /**
+     * 防反跳
+     *
+     * @param duration 持续时间
+     */
+    public Debounce(Duration duration) {
+        this.executorService = newScheduledThreadPoolExecutor();
+        this.duration = duration;
+    }
+
+    /**
+     * 执行
+     *
+     * @param runnable 可运行
+     */
+    public void execute(Runnable runnable) {
+        if (executorService.isShutdown() || executorService.isTerminated()) {
+            executorService = newScheduledThreadPoolExecutor();
+            scheduledFuture = null;
+        }
+        if (scheduledFuture != null && !scheduledFuture.isDone()) {
+            scheduledFuture.cancel(Boolean.FALSE);
+        }
+        scheduledFuture = executorService.schedule(runnable, duration.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * 创建
+     *
+     * @return {@link ScheduledThreadPoolExecutor}
+     */
+    private ScheduledThreadPoolExecutor newScheduledThreadPoolExecutor() {
+        return new ScheduledThreadPoolExecutor(CORE_POOL_SIZE, new NamedThreadFactory(THREAD_PREFIX));
+    }
+
+    /**
+     * 取消
+     */
+    public void cancel() {
+        if (!executorService.isShutdown()) {
+            executorService.shutdownNow();
+        }
+    }
+}
+
