@@ -16,7 +16,7 @@ public class FileUtils {
      * @return {@link File}
      */
     public static File root() {
-        File root = new File(System.getProperty("user.home"), ".kafka-visark");
+        File root = new File(System.getProperty("user.home"), "kafka-visark");
         if (!root.exists()) {
             if (root.mkdirs()) {
                 System.out.println("创建目录成功");

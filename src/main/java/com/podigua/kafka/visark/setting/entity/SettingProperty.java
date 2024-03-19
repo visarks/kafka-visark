@@ -5,7 +5,6 @@ import com.podigua.kafka.visark.setting.enums.Language;
 import com.podigua.kafka.visark.setting.enums.Themes;
 import javafx.application.Application;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.control.Alert;
 
 import java.util.Locale;
 
@@ -25,13 +24,15 @@ public class SettingProperty {
         this.language.addListener((observable, oldValue, newValue) -> {
             Locale.setDefault(newValue.locale());
             SettingClient.updateLocale(newValue.locale());
-            SettingClient.write(this);
+            SettingClient.update(this);
         });
         this.theme.addListener((observable, oldValue, newValue) -> {
             Application.setUserAgentStylesheet(newValue.theme().getUserAgentStylesheet());
-            SettingClient.write(this);
+            SettingClient.update(this);
         });
     }
+
+    private String id="1";
 
     /**
      * 语言
@@ -65,5 +66,13 @@ public class SettingProperty {
 
     public SimpleObjectProperty<Themes> theme() {
         return this.theme;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

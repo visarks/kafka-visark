@@ -10,7 +10,7 @@ import javafx.beans.property.SimpleStringProperty;
  * @date 2024/03/18
  */
 public class ClusterProperty {
-    private final SimpleStringProperty priority = new SimpleStringProperty("1");
+    private  String id;
     private final SimpleStringProperty name = new SimpleStringProperty("");
     private final SimpleStringProperty servers = new SimpleStringProperty("");
 
@@ -38,15 +38,11 @@ public class ClusterProperty {
         return servers;
     }
 
-    public void setPriority(String priority) {
-        this.priority.set(priority);
+    public String getId() {
+        return id;
     }
 
-    public String getPriority() {
-        return priority.get();
-    }
-
-    public SimpleStringProperty priority() {
-        return priority;
+    public void setId(String id) {
+        this.id = id;
     }
 }

@@ -21,14 +21,20 @@ public class CardHeaderPane extends HBox {
     private double y = 0;
     private final Label label = new Label();
 
-    public CardHeaderPane(Stage stage, String title) {
+    public CardHeaderPane(Stage stage, String title,Runnable runnable) {
         Button close = new Button();
         FontIcon icon = new FontIcon(Material2OutlinedAL.CLOSE);
         close.setGraphic(icon);
         close.getStyleClass().addAll(
                 Styles.BUTTON_CIRCLE, Styles.FLAT, Styles.DANGER
         );
-        close.setOnAction(event -> stage.close());
+        if(stage!=null){
+            close.setOnAction(event -> stage.close());
+        }
+        if(runnable!=null){
+            close.setOnAction(event->runnable.run());
+        }
+
         this.label.getStyleClass().add(Styles.TITLE_3);
         this.setAlignment(Pos.CENTER_LEFT);
         HBox center = new HBox();
@@ -46,14 +52,16 @@ public class CardHeaderPane extends HBox {
     }
 
     private void addListener(Stage stage) {
-        this.setOnMousePressed(event -> {
-            this.x = event.getScreenX() - stage.getX();
-            this.y = event.getScreenY() - stage.getY();
-        });
-        this.setOnMouseDragged(event -> {
-            stage.setX(event.getScreenX() - this.x);
-            stage.setY(event.getScreenY() - this.y);
-        });
+        if(stage!=null){
+            this.setOnMousePressed(event -> {
+                this.x = event.getScreenX() - stage.getX();
+                this.y = event.getScreenY() - stage.getY();
+            });
+            this.setOnMouseDragged(event -> {
+                stage.setX(event.getScreenX() - this.x);
+                stage.setY(event.getScreenY() - this.y);
+            });
+        }
     }
 
     public void setTitle(String title) {

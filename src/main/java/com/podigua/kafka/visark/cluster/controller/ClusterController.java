@@ -2,11 +2,15 @@ package com.podigua.kafka.visark.cluster.controller;
 
 import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
+import com.podigua.kafka.core.utils.AlertUtils;
+import com.podigua.kafka.core.utils.MessageUtils;
+import com.podigua.kafka.visark.cluster.ClusterClient;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
@@ -16,6 +20,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -34,10 +39,11 @@ public class ClusterController implements Initializable {
     }
 
     private void initTable() {
-        tableView.setItems(FXCollections.observableArrayList(new ClusterProperty(),new ClusterProperty(),new ClusterProperty(),new ClusterProperty(),new ClusterProperty(),new ClusterProperty()));
+
+        ObservableList<ClusterProperty> items = FXCollections.observableArrayList();
+        tableView.setItems(items);
+        reload();
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-
-
         var priority = new TableColumn<ClusterProperty, String>("#");
         priority.setCellFactory(col -> {
             var cell = new TableCell<ClusterProperty, String>();
@@ -50,29 +56,51 @@ public class ClusterController implements Initializable {
         priority.setPrefWidth(45);
         priority.setResizable(false);
         priority.setSortable(false);
-
-        priority.setCellValueFactory(property -> property.getValue().priority());
         TableColumn<ClusterProperty, String> name = new TableColumn<>(SettingClient.bundle().getString("cluster.table.name"));
         name.setCellValueFactory(property -> property.getValue().name());
         TableColumn<ClusterProperty, String> servers = new TableColumn<>(SettingClient.bundle().getString("cluster.table.servers"));
         servers.setCellValueFactory(property -> property.getValue().servers());
-        tableView.getColumns().addAll(priority,name,servers);
+        tableView.getColumns().addAll(priority, name, servers);
         name.prefWidthProperty().bind(tableView.widthProperty().subtract(priority.prefWidthProperty()).divide(3));
         servers.prefWidthProperty().bind(tableView.widthProperty().subtract(priority.prefWidthProperty()).subtract(name.prefWidthProperty()).subtract(3));
+        tableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                connectButton.setDisable(false);
+                deleteButton.setDisable(false);
+            } else {
+                connectButton.setDisable(true);
+                deleteButton.setDisable(true);
+            }
+        });
+        deleteButton.setOnAction(event -> {
+            AlertUtils.confirm("是否确认删除?").ifPresent(type -> {
+                ClusterProperty property = tableView.getSelectionModel().getSelectedItem();
+                ClusterClient.deleteById(property.getId());
+                MessageUtils.show("信息提示", "删除成功");
+                reload();
+            });
+        });
+    }
+
+    private void reload() {
+        List<ClusterProperty> clusters = ClusterClient.query4List();
+        tableView.getItems().clear();
+        tableView.getItems().addAll(clusters);
+        tableView.refresh();
     }
 
     private void initStyle() {
         addButton.setGraphic(new FontIcon(Material2AL.ADD));
         addButton.getStyleClass().addAll(
-                Styles.FLAT,Styles.ACCENT
+                Styles.FLAT, Styles.ACCENT
         );
         deleteButton.setGraphic(new FontIcon(Material2AL.DELETE));
         deleteButton.getStyleClass().addAll(
-                Styles.FLAT,Styles.DANGER
+                Styles.FLAT, Styles.DANGER
         );
         connectButton.setGraphic(new FontIcon(Material2AL.CAST_CONNECTED));
         connectButton.getStyleClass().addAll(
-                Styles.FLAT,Styles.ACCENT
+                Styles.FLAT, Styles.ACCENT
         );
     }
 }

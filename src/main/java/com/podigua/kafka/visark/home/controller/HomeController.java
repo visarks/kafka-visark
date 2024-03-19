@@ -27,7 +27,6 @@ public class HomeController implements Initializable {
     public Button clusterButton;
     public Button settingButton;
 
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         clusterButton.setGraphic(new FontIcon(Material2OutlinedAL.FOLDER));

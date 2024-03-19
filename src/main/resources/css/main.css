@@ -2,3 +2,10 @@
     -fx-border-width: 0 0 1px 0;
     -fx-border-color: -color-border-default;
 }
+.dialog-pane {
+    -fx-border-color: -color-border-default;
+}
+
+/*.dialog-pane > .header-panel .title {*/
+/*    -fx-text-fill: !* 设置标题文字颜色 *!;*/
+/*}*/
