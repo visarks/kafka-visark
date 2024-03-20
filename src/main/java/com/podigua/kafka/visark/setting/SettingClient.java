@@ -54,6 +54,8 @@ public class SettingClient {
             DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name()));
         }
         INSTANCE = property;
+        Locale.setDefault(INSTANCE.getLanguage().locale());
+        Application.setUserAgentStylesheet(INSTANCE.getTheme().theme().getUserAgentStylesheet());
         RESOURCE_BUNDLE = ResourceBundle.getBundle("messages", Locale.getDefault());
         INSTANCE.addListener();
     }

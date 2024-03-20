@@ -1,21 +1,19 @@
 package com.podigua.kafka.visark.setting.controller;
 
-import com.dlsc.formsfx.model.structure.Field;
-import com.dlsc.formsfx.model.structure.Form;
-import com.dlsc.formsfx.model.structure.Group;
-import com.dlsc.formsfx.model.util.ResourceBundleService;
-import com.dlsc.formsfx.view.controls.SimpleComboBoxControl;
-import com.dlsc.formsfx.view.renderer.FormRenderer;
+import atlantafx.base.controls.Tile;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.entity.SettingProperty;
+import com.podigua.kafka.visark.setting.enums.Language;
+import com.podigua.kafka.visark.setting.enums.Themes;
 import javafx.beans.property.SimpleListProperty;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Separator;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
-import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.spi.ResourceBundleProvider;
 
 /**
  * 设置控制器
@@ -26,27 +24,49 @@ import java.util.spi.ResourceBundleProvider;
 public class SettingController implements Initializable {
     private final SettingProperty settingProperty = SettingClient.get();
     public AnchorPane center;
-    private Form form;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        ResourceBundleService service=new ResourceBundleService(SettingClient.bundle());
-        if (form == null) {
-            form = Form.of(Group.of(
-                    Field.ofSingleSelectionType(new SimpleListProperty<>(SettingClient.LANGUAGES), settingProperty.language())
-                            .label("setting.form.language").render(new SimpleComboBoxControl<>(){
+        VBox box = new VBox();
+        box.setSpacing(15);
+        Tile language = language();
+        Tile theme = theme();
+        box.getChildren().addAll(language, theme);
+        this.center.getChildren().add(box);
+        AnchorPane.setTopAnchor(box, 0.0);
+        AnchorPane.setRightAnchor(box, 0.0);
+        AnchorPane.setBottomAnchor(box, 0.0);
+        AnchorPane.setLeftAnchor(box, 0.0);
+    }
 
-                            }),
-                    Field.ofSingleSelectionType(new SimpleListProperty<>(SettingClient.THEMES), settingProperty.theme())
-                            .label("setting.form.theme")
+    private Tile theme() {
+        Tile tile = new Tile(
+                SettingClient.bundle().getString("setting.form.theme"), ""
+        );
+        ComboBox<Themes> comboBox = new ComboBox<>(new SimpleListProperty<>(SettingClient.THEMES));
+        comboBox.setValue(settingProperty.getTheme());
+        comboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            settingProperty.theme().set(newValue);
+        });
+        comboBox.setPrefWidth(220);
+        tile.setAction(comboBox);
+        tile.setActionHandler(comboBox::requestFocus);
+        return tile;
+    }
 
-            )).title("setting.title").i18n(service);
-        }
-        FormRenderer renderer = new FormRenderer(form);
-        center.getChildren().add(renderer);
-        AnchorPane.setTopAnchor(renderer,0.0);
-        AnchorPane.setRightAnchor(renderer,0.0);
-        AnchorPane.setBottomAnchor(renderer,0.0);
-        AnchorPane.setLeftAnchor(renderer,0.0);
+    private Tile language() {
+        Tile tile = new Tile(
+                SettingClient.bundle().getString("setting.form.language"),
+                SettingClient.bundle().getString("setting.form.language.prompt")
+        );
+        ComboBox<Language> comboBox = new ComboBox<>(new SimpleListProperty<>(SettingClient.LANGUAGES));
+        comboBox.setValue(settingProperty.getLanguage());
+        comboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            settingProperty.language().set(newValue);
+        });
+        comboBox.setPrefWidth(220);
+        tile.setAction(comboBox);
+        tile.setActionHandler(comboBox::requestFocus);
+        return tile;
     }
 }

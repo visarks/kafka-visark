@@ -2,6 +2,7 @@ package com.podigua.kafka.visark.home.controller;
 
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
+import com.podigua.kafka.visark.cluster.controller.ClusterController;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -9,6 +10,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.stage.Stage;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
 import org.kordamp.ikonli.material2.Material2OutlinedMZ;
@@ -43,6 +45,8 @@ public class HomeController implements Initializable {
     public void showCluster(ActionEvent event) {
         FXMLLoader loader = Resources.getLoader("/fxml/cluster.fxml");
         Parent parent = loader.getRoot();
-        StageUtils.show(parent, SettingClient.bundle().getString("cluster.title"));
+        Stage stage = StageUtils.show(parent, SettingClient.bundle().getString("cluster.title"));
+        ClusterController controller = loader.getController();
+        controller.setParentStage(stage);
     }
 }

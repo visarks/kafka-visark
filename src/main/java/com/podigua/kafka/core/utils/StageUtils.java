@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 
 /**
  *
@@ -20,7 +21,7 @@ public class StageUtils {
      * @param title  标题
      * @return {@link Stage}
      */
-    public static Stage show(Parent parent, String title) {
+    public static Stage show(Parent parent, String title, Window window) {
         Stage stage = new Stage();
         Card card = new Card();
         CardHeaderPane header = new CardHeaderPane(stage,title,null);
@@ -32,10 +33,20 @@ public class StageUtils {
         Scene scene = new Scene(card);
         scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
         stage.setScene(scene);
-        stage.initOwner(State.stage());
+        stage.initOwner(window);
         stage.setTitle(title);
         stage.show();
         return stage;
+    }
+    /**
+     * 显示
+     *
+     * @param parent 父母
+     * @param title  标题
+     * @return {@link Stage}
+     */
+    public static Stage show(Parent parent, String title) {
+        return show(parent,title,State.stage());
     }
 
     public static void notice(String title){

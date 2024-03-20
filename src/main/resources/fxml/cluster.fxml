@@ -12,9 +12,10 @@
          <top>
             <HBox alignment="CENTER_LEFT" prefHeight="45.0" prefWidth="652.0" BorderPane.alignment="CENTER">
                <children>
-                <Button fx:id="addButton" mnemonicParsing="false" text="%cluster.new" />
-                  <Button fx:id="deleteButton" disable="true" mnemonicParsing="false" text="%cluster.del" />
-                  <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" text="%cluster.connect" />
+                <Button fx:id="addButton" mnemonicParsing="false" onAction="#onAdd" text="%form.new" />
+                  <Button fx:id="editButton" disable="true" layoutX="100.0" layoutY="20.0" mnemonicParsing="false" onAction="#onEdit" text="%form.edit" />
+                  <Button fx:id="deleteButton" disable="true" mnemonicParsing="false" onAction="#onDelete" text="%form.delete" />
+                  <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" onAction="#onConnect" text="%cluster.connect" />
                </children>
             </HBox>
          </top>

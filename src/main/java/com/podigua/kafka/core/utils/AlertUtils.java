@@ -2,6 +2,7 @@ package com.podigua.kafka.core.utils;
 
 import com.podigua.kafka.State;
 import com.podigua.kafka.core.CardHeaderPane;
+import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -19,7 +20,7 @@ public class AlertUtils {
     public static Optional<ButtonType> confirm(String content) {
         var alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.getDialogPane().getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
-        CardHeaderPane header=new CardHeaderPane(null,"信息提示", alert::close);
+        CardHeaderPane header=new CardHeaderPane(null, SettingClient.bundle().getString("alert.title"), alert::close);
         AnchorPane box=new AnchorPane(header);
         AnchorPane.setLeftAnchor(header,10.0);
         AnchorPane.setTopAnchor(header,5.0);
