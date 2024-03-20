@@ -4,12 +4,16 @@ import com.podigua.kafka.core.handler.DefaultExceptionHandler;
 import com.podigua.kafka.core.utils.DatasourceUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.sun.javafx.tk.Toolkit;
 import com.zaxxer.hikari.HikariDataSource;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
 
@@ -37,31 +41,18 @@ public class VisakApplication extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        Screen screen=Screen.getPrimary();
+        Rectangle2D bounds = screen.getVisualBounds();
         Thread.currentThread().setUncaughtExceptionHandler(new DefaultExceptionHandler(stage));
         State.stage = stage;
         FXMLLoader loader = Resources.getLoader("/fxml/home.fxml");
         Parent root = loader.getRoot();
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(root,bounds.getWidth(),bounds.getHeight());
         stage.setScene(scene);
-        stage.setOnShown(event -> {
-            stage.toFront(); // 将舞台移到所有窗口的前面
-            stage.requestFocus(); // 请求焦点
-            Platform.runLater(() -> {
-                // 进一步尝试模拟键盘或鼠标事件以激活窗口
-                // 注意，这可能因操作系统版本而异
-//                try {
-//                    Robot robot = new Robot();
-//                    robot.mouseMove((int)stage.getX() + 100, (int)stage.getY() + 100); // 移动鼠标到窗口内
-//                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-//                } catch (Exception e) {
-//
-//                }
-            });
+        Platform.runLater(()->{
+            stage.show();
+            stage.requestFocus();
         });
-        Platform.runLater(stage::show);
-
-
     }
 
     @Override
