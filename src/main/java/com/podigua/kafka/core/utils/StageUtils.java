@@ -29,12 +29,34 @@ public class StageUtils {
         card.setBody(parent);
         stage.initStyle(StageStyle.TRANSPARENT);
         stage.setResizable(false);
-        stage.initModality(Modality.WINDOW_MODAL);
+        stage.initModality(Modality.APPLICATION_MODAL);
         Scene scene = new Scene(card);
         scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
         stage.setScene(scene);
         stage.initOwner(window);
         stage.setTitle(title);
+        stage.show();
+        return stage;
+    }
+
+    /**
+     *
+     *
+     * @param body   身体
+     * @param window 窗
+     * @return {@link Stage}
+     */
+    public static Stage body(Parent body,Window window) {
+        Stage stage = new Stage();
+        Card card = new Card();
+        card.setBody(body);
+        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.setResizable(false);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        Scene scene = new Scene(card);
+        scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
+        stage.setScene(scene);
+        stage.initOwner(window);
         stage.show();
         return stage;
     }

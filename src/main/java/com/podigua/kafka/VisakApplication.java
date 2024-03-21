@@ -13,6 +13,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
@@ -46,7 +47,8 @@ public class VisakApplication extends Application {
         Thread.currentThread().setUncaughtExceptionHandler(new DefaultExceptionHandler(stage));
         State.stage = stage;
         FXMLLoader loader = Resources.getLoader("/fxml/home.fxml");
-        Parent root = loader.getRoot();
+        AnchorPane root = loader.getRoot();
+
         Scene scene = new Scene(root,bounds.getWidth(),bounds.getHeight());
         stage.setScene(scene);
         Platform.runLater(()->{

@@ -2,7 +2,6 @@ package com.podigua.kafka.visark.setting;
 
 import com.podigua.kafka.core.debounce.Debounce;
 import com.podigua.kafka.core.utils.DatasourceUtils;
-import com.podigua.kafka.core.utils.FileUtils;
 import com.podigua.kafka.visark.setting.entity.SettingProperty;
 import com.podigua.kafka.visark.setting.enums.Language;
 import com.podigua.kafka.visark.setting.enums.Themes;
@@ -10,7 +9,6 @@ import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import java.io.File;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -23,8 +21,8 @@ import java.util.logging.Logger;
  * @date 2024/03/18
  */
 public class SettingClient {
-    private final static String INSERT = "insert into setting(id,language,theme) values ('1','%s','%s')";
-    private final static String UPDATE = "update setting set language='%s',theme='%s' where id='1'";
+    private final static String INSERT = "insert into setting(id,language,theme,timeout) values ('1','%s','%s',%d)";
+    private final static String UPDATE = "update setting set language='%s',theme='%s',timeout=%d where id='1'";
     private final static Logger logger = Logger.getLogger(SettingClient.class.getName());
     private final static Debounce DEBOUNCE = new Debounce(Duration.ofMillis(100));
     public static ObservableList<Themes> THEMES = FXCollections.observableArrayList(
@@ -51,7 +49,7 @@ public class SettingClient {
         SettingProperty property = DatasourceUtils.query4Object("select * from setting where id='1'", SettingProperty.class);
         if (property == null) {
             property = new SettingProperty();
-            DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name()));
+            DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name(),property.getTimeout()));
         }
         INSTANCE = property;
         Locale.setDefault(INSTANCE.getLanguage().locale());
@@ -60,7 +58,7 @@ public class SettingClient {
         INSTANCE.addListener();
     }
 
-    public static void updateLocale(Locale locale) {
+    public static void updateLocale() {
         RESOURCE_BUNDLE = ResourceBundle.getBundle("messages", Locale.getDefault());
     }
 
@@ -81,7 +79,7 @@ public class SettingClient {
         DEBOUNCE.execute(() -> {
             String language = setting.getLanguage().name();
             String theme = setting.getTheme().name();
-            DatasourceUtils.execute(String.format(UPDATE, language, theme));
+            DatasourceUtils.execute(String.format(UPDATE, language, theme,setting.getTimeout()));
             logger.info("更新配置");
         });
     }

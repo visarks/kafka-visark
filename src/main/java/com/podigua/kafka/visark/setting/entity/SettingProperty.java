@@ -4,6 +4,7 @@ import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.enums.Language;
 import com.podigua.kafka.visark.setting.enums.Themes;
 import javafx.application.Application;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.util.Locale;
@@ -23,16 +24,19 @@ public class SettingProperty {
     public void addListener() {
         this.language.addListener((observable, oldValue, newValue) -> {
             Locale.setDefault(newValue.locale());
-            SettingClient.updateLocale(newValue.locale());
+            SettingClient.updateLocale();
             SettingClient.update(this);
         });
         this.theme.addListener((observable, oldValue, newValue) -> {
             Application.setUserAgentStylesheet(newValue.theme().getUserAgentStylesheet());
             SettingClient.update(this);
         });
+        this.timeout.addListener((observable, oldValue, newValue) -> {
+            SettingClient.update(this);
+        });
     }
 
-    private String id="1";
+    private String id = "1";
 
     /**
      * 语言
@@ -42,6 +46,11 @@ public class SettingProperty {
      * 主题
      */
     private final SimpleObjectProperty<Themes> theme = new SimpleObjectProperty<>(Themes.primer_light);
+
+    /**
+     * 超时时间
+     */
+    private final SimpleIntegerProperty timeout = new SimpleIntegerProperty(10);
 
 
     public Language getLanguage() {
@@ -74,5 +83,17 @@ public class SettingProperty {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setTimeout(Integer timeout) {
+        this.timeout.set(timeout);
+    }
+
+    public Integer getTimeout() {
+        return timeout.get();
+    }
+
+    public SimpleIntegerProperty timeout() {
+        return timeout;
     }
 }

@@ -22,31 +22,22 @@ public class Test {
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "group1");
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Lists.of("test"));
         while (true){
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1));
-            if(records!=null){
-                int count = records.count();
-                if(count>0){
-                    System.out.println("----------------------");
-                    Iterator<ConsumerRecord<String, String>> iterator = records.iterator();
-                    while (iterator.hasNext()){
-                        ConsumerRecord<String, String> next = iterator.next();
-                        Headers headers = next.headers();
-                        String key = next.key();
-                        int partition = next.partition();
-                        long timestamp = next.timestamp();
-                        String topic = next.topic();
-                        String value = next.value();
-                        System.out.println("headers:"+headers+"key:"+key+"partition:"+partition+"timestamp:"+timestamp+"topic:"+topic+"value:"+value);
-                    }
-                }
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+            records.forEach(record->{
+                Headers headers = record.headers();
+                String key = record.key();
+                int partition = record.partition();
+                long timestamp = record.timestamp();
+                String topic = record.topic();
+                String value = record.value();
+                System.out.println("headers:"+headers+"key:"+key+"partition:"+partition+"timestamp:"+timestamp+"topic:"+topic+"value:"+value);
+            });
 
-            }
 
-            consumer.close();
-            break;
         }
     }
 }
