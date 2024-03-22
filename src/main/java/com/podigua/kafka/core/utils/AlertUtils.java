@@ -52,10 +52,9 @@ public class AlertUtils {
      * @param content 内容
      */
     public static void error(Window parent, String content) {
-        var alert = new Alert(Alert.AlertType.ERROR);
+        var alert = new Alert(Alert.AlertType.NONE,content,ButtonType.OK);
         alert.setTitle(SettingClient.bundle().getString("alert.error.title"));
         alert.setHeaderText(null);
-        alert.setContentText(content);
         alert.initOwner(parent);
         alert.showAndWait();
     }

@@ -3,23 +3,21 @@ package com.podigua.kafka;
 import com.podigua.kafka.core.handler.DefaultExceptionHandler;
 import com.podigua.kafka.core.utils.DatasourceUtils;
 import com.podigua.kafka.core.utils.Resources;
+import com.podigua.kafka.event.EventBus;
 import com.podigua.kafka.visark.setting.SettingClient;
-import com.sun.javafx.tk.Toolkit;
+import com.podigua.kafka.visark.setting.ThemeChangeEvent;
+import com.podigua.kafka.visark.setting.entity.SettingProperty;
+import com.podigua.kafka.visark.setting.enums.Themes;
 import com.zaxxer.hikari.HikariDataSource;
 import javafx.application.Application;
+import javafx.application.ColorScheme;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Rectangle2D;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
 
-import java.awt.*;
-import java.awt.event.InputEvent;
 import java.util.logging.Logger;
 
 /**
@@ -37,23 +35,46 @@ public class VisakApplication extends Application {
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();
+        Platform.Preferences preferences = Platform.getPreferences();
+        preferences.colorSchemeProperty().addListener((observable, oldValue, newValue) -> new ThemeChangeEvent().publish());
         SettingClient.get();
+        subscribe();
+        new ThemeChangeEvent().publish();
+    }
+
+    private void subscribe() {
+        onThemeChange();
+    }
+    private static void onThemeChange() {
+        EventBus.getInstance().subscribe(ThemeChangeEvent.class, event -> {
+            SettingProperty property = SettingClient.get();
+            if (property.getAutoTheme()) {
+                ColorScheme scheme = Platform.getPreferences().getColorScheme();
+                if (ColorScheme.DARK.equals(scheme)) {
+                    Application.setUserAgentStylesheet(Themes.primer_dark.theme().getUserAgentStylesheet());
+                } else {
+                    Application.setUserAgentStylesheet(Themes.primer_light.theme().getUserAgentStylesheet());
+                }
+            } else {
+                Application.setUserAgentStylesheet(property.getTheme().theme().getUserAgentStylesheet());
+            }
+        });
     }
 
     @Override
     public void start(Stage stage) throws Exception {
-        Screen screen=Screen.getPrimary();
-        Rectangle2D bounds = screen.getVisualBounds();
         Thread.currentThread().setUncaughtExceptionHandler(new DefaultExceptionHandler(stage));
         State.stage = stage;
         FXMLLoader loader = Resources.getLoader("/fxml/home.fxml");
         AnchorPane root = loader.getRoot();
-
-        Scene scene = new Scene(root,bounds.getWidth(),bounds.getHeight());
+        Scene scene = new Scene(root);
         stage.setScene(scene);
-        Platform.runLater(()->{
+        stage.setMinHeight(766);
+        stage.setMinWidth(1216);
+        stage.setMaximized(true);
+        Platform.runLater(() -> {
             stage.show();
-            stage.requestFocus();
+//            stage.requestFocus();
         });
     }
 

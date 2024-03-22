@@ -80,16 +80,16 @@ public class AdminManger {
      */
     public static Throwable translate(Throwable throwable) {
         List<Throwable> list = new ArrayList<>();
-        while (throwable != null) {
-            list.add(throwable);
-            throwable = throwable.getCause();
+        Throwable cause = throwable.getCause();
+        while (cause != null) {
+            list.add(cause);
+            cause = cause.getCause();
         }
         for (Throwable t : list) {
             if (t instanceof TimeoutException) {
                 return new RuntimeException(SettingClient.bundle().getString("cluster.connect.timeout"));
             }
         }
-
-        return throwable;
+        return cause==null?throwable:cause;
     }
 }

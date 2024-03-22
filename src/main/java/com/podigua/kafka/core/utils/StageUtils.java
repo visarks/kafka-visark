@@ -71,20 +71,4 @@ public class StageUtils {
         return show(parent,title,State.stage());
     }
 
-    public static void notice(String title){
-//        final var msg = new Notification(
-//               title,
-//                new FontIcon(Material2OutlinedAL.INFO)
-//        );
-//        msg.getStyleClass().addAll(
-//                Styles.ACCENT, Styles.ELEVATED_1
-//        );
-//        msg.setPrefHeight(Region.USE_PREF_SIZE);
-//        msg.setMaxHeight(Region.USE_PREF_SIZE);
-//        StackPane.setAlignment(msg, Pos.TOP_RIGHT);
-//        StackPane.setMargin(msg, new Insets(10, 10, 0, 0));
-//        var out = Animations.slideOutUp(msg, Duration.millis(250));
-//        out.setOnFinished(f -> out.getChildren().remove(msg));
-//        out.playFromStart();
-    }
 }

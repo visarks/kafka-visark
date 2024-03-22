@@ -21,8 +21,8 @@ import java.util.logging.Logger;
  * @date 2024/03/18
  */
 public class SettingClient {
-    private final static String INSERT = "insert into setting(id,language,theme,timeout) values ('1','%s','%s',%d)";
-    private final static String UPDATE = "update setting set language='%s',theme='%s',timeout=%d where id='1'";
+    private final static String INSERT = "insert into setting(id,language,theme,timeout,autoTheme,openDialog) values ('1','%s','%s',%d,%b,%b)";
+    private final static String UPDATE = "update setting set language='%s',theme='%s',timeout=%d,autoTheme=%b,openDialog=%b where id='1'";
     private final static Logger logger = Logger.getLogger(SettingClient.class.getName());
     private final static Debounce DEBOUNCE = new Debounce(Duration.ofMillis(100));
     public static ObservableList<Themes> THEMES = FXCollections.observableArrayList(
@@ -49,11 +49,10 @@ public class SettingClient {
         SettingProperty property = DatasourceUtils.query4Object("select * from setting where id='1'", SettingProperty.class);
         if (property == null) {
             property = new SettingProperty();
-            DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name(),property.getTimeout()));
+            DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name(),property.getTimeout(),property.getAutoTheme(),property.getOpenDialog()));
         }
         INSTANCE = property;
         Locale.setDefault(INSTANCE.getLanguage().locale());
-        Application.setUserAgentStylesheet(INSTANCE.getTheme().theme().getUserAgentStylesheet());
         RESOURCE_BUNDLE = ResourceBundle.getBundle("messages", Locale.getDefault());
         INSTANCE.addListener();
     }
@@ -79,7 +78,7 @@ public class SettingClient {
         DEBOUNCE.execute(() -> {
             String language = setting.getLanguage().name();
             String theme = setting.getTheme().name();
-            DatasourceUtils.execute(String.format(UPDATE, language, theme,setting.getTimeout()));
+            DatasourceUtils.execute(String.format(UPDATE, language, theme,setting.getTimeout(),setting.getAutoTheme(),setting.getOpenDialog()));
             logger.info("更新配置");
         });
     }

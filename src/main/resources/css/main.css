@@ -1,7 +1,8 @@
-.card-header{
+.card-header {
     -fx-border-width: 0 0 1px 0;
     -fx-border-color: -color-border-default;
 }
+
 .dialog-pane {
     -fx-border-color: -color-border-default;
 }
@@ -12,4 +13,49 @@
 
 .tile-base .description {
     -fx-font-size: 0.85em;
+}
+#leftPane .container{
+    -fx-background-color: -color-bg-default;
+}
+
+#leftPane .container .tree-root{
+    -fx-padding: 3;
+}
+
+#leftPane .cluster-tree-view-parent {
+    -fx-background-color: -color-bg-default;
+}
+
+#leftPane .split-pane {
+    -fx-background-color: red;
+    -fx-pref-width: 2;
+}
+
+.cluster-tree-view {
+    -fx-padding: 0;
+    -fx-indent: 0;
+    -color-cell-bg: -color-bg-inset;
+    -color-cell-bg-selected: -color-accent-subtle;
+    -color-cell-bg-selected-focused: -color-accent-subtle;
+    -color-cell-border: -color-bg-inset;
+    -fx-background-radius: 5px;
+}
+
+.cluster-tree-view > .tree-disclosure-node, .cluster-tree-view > .tree-disclosure-node > .arrow {
+    -fx-min-width: 0;
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+    visibility: hidden;
+}
+
+.cluster-tree-view > .container {
+    -fx-min-height: 2.1em;
+    -fx-pref-height: 2.1em;
+    -fx-max-height: 2.1em;
+    -fx-padding: 0 6px 0 1.2em;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 0 0 0 1;
 }

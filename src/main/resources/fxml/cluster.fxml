@@ -6,6 +6,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 
+<?import javafx.scene.control.CheckBox?>
 <AnchorPane prefHeight="386.0" prefWidth="652.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.cluster.controller.ClusterController">
    <children>
       <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -15,7 +16,6 @@
                 <Button fx:id="addButton" mnemonicParsing="false" onAction="#onAdd" text="%form.new" />
                   <Button fx:id="editButton" disable="true" layoutX="100.0" layoutY="20.0" mnemonicParsing="false" onAction="#onEdit" text="%form.edit" />
                   <Button fx:id="deleteButton" disable="true" mnemonicParsing="false" onAction="#onDelete" text="%form.delete" />
-                  <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" onAction="#onConnect" text="%cluster.connect" />
                </children>
             </HBox>
          </top>
@@ -26,6 +26,16 @@
                </children>
             </AnchorPane>
          </center>
+         <bottom>
+            <HBox>
+               <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                  <CheckBox fx:id="openDialog" text="%setting.form.open.dialog"/>
+               </HBox>
+               <HBox  BorderPane.alignment="CENTER_RIGHT">
+                  <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" onAction="#onConnect" text="%cluster.connect" />
+               </HBox>
+            </HBox>
+         </bottom>
       </BorderPane>
    </children>
 </AnchorPane>

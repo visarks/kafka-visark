@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import atlantafx.base.controls.CustomTextField?>
 <?import atlantafx.base.controls.Spacer?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="766.0" prefWidth="1216.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.home.controller.HomeController">
+<AnchorPane fx:id="rootPane" minHeight="766.0" prefHeight="766.0" minWidth="1216.0" prefWidth="1216.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.home.controller.HomeController">
    <children>
       <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
@@ -18,8 +22,8 @@
                      <children>
                         <ToolBar prefHeight="40.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                           <items>
-                              <ComboBox fx:id="clusterSelect" prefWidth="220.0" />
-                            <Button fx:id="clusterButton" mnemonicParsing="false" onAction="#showCluster" />
+                              <Button fx:id="clusterButton" mnemonicParsing="false" onAction="#showCluster" />
+                              <Button fx:id="toggleLeftButton" mnemonicParsing="false" onAction="#toggleLeft" />
                               <Spacer />
                               <Button fx:id="settingButton" layoutX="234.0" layoutY="10.0" mnemonicParsing="false" onAction="#showSetting" />
                           </items>
@@ -30,7 +34,28 @@
             </HBox>
          </top>
          <center>
-            <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+            <BorderPane BorderPane.alignment="CENTER">
+               <center>
+                  <SplitPane fx:id="splitPane" dividerPositions="0.0">
+                     <items>
+                        <AnchorPane fx:id="leftPane" maxWidth="500.0" minWidth="0.0" prefWidth="240.0" SplitPane.resizableWithParent="false">
+                           <children>
+                              <HBox styleClass="container" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <HBox styleClass="tree-root" HBox.hgrow="ALWAYS">
+                                    <VBox prefWidth="100.0" spacing="5.0" styleClass="cluster-tree-view-parent" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <CustomTextField fx:id="filter" />
+                                          <TreeView fx:id="treeView" prefHeight="200.0" prefWidth="200.0" styleClass="cluster-tree-view" VBox.vgrow="ALWAYS" />
+                                       </children>
+                                    </VBox>
+                                 </HBox>
+                              </HBox>
+                           </children>
+                        </AnchorPane>
+                        <TabPane fx:id="tabPane" />
+                     </items>
+                  </SplitPane>
+               </center></BorderPane>
          </center>
       </BorderPane>
    </children>

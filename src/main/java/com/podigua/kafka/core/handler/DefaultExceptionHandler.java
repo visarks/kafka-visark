@@ -16,8 +16,7 @@ import java.util.logging.Logger;
 /**
  *
  **/
-public class DefaultExceptionHandler  implements Thread.UncaughtExceptionHandler {
-    private final Logger logger=Logger.getLogger(DefaultExceptionHandler.class.getName());
+public class DefaultExceptionHandler implements Thread.UncaughtExceptionHandler {
     private final Stage stage;
 
     public DefaultExceptionHandler(Stage stage) {
@@ -34,6 +33,7 @@ public class DefaultExceptionHandler  implements Thread.UncaughtExceptionHandler
 
     private Alert createExceptionDialog(Throwable throwable) {
         Objects.requireNonNull(throwable);
+        throwable.printStackTrace();
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(SettingClient.bundle().getString("alert.error.title"));
         alert.setHeaderText(null);
@@ -46,7 +46,7 @@ public class DefaultExceptionHandler  implements Thread.UncaughtExceptionHandler
             textArea.setWrapText(false);
             textArea.setMaxWidth(Double.MAX_VALUE);
             textArea.setMaxHeight(Double.MAX_VALUE);
-            VBox content = new VBox(5,label, textArea);
+            VBox content = new VBox(5, label, textArea);
             content.setMaxWidth(Double.MAX_VALUE);
             alert.getDialogPane().setExpandableContent(content);
             alert.initOwner(stage);

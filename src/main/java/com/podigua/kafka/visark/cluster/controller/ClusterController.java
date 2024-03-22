@@ -6,10 +6,12 @@ import com.podigua.kafka.admin.Admin;
 import com.podigua.kafka.admin.AdminConnectTask;
 import com.podigua.kafka.admin.AdminManger;
 import com.podigua.kafka.core.utils.AlertUtils;
+import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.visark.cluster.ClusterClient;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
+import com.podigua.kafka.visark.cluster.event.ClusterConnectEvent;
 import com.podigua.kafka.visark.cluster.layout.ConnectPane;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.application.Platform;
@@ -20,19 +22,15 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
-import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 /**
@@ -48,7 +46,7 @@ public class ClusterController implements Initializable {
     public Button connectButton;
     public TableView<ClusterProperty> tableView;
     public Button editButton;
-    private Stage formStage;
+    public CheckBox openDialog;
     private Stage parentStage;
 
 
@@ -56,6 +54,8 @@ public class ClusterController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         initStyle();
         initTable();
+        this.openDialog.setSelected(SettingClient.get().getOpenDialog());
+        SettingClient.get().openDialog().bind(this.openDialog.selectedProperty());
     }
 
     private void initTable() {
@@ -63,7 +63,7 @@ public class ClusterController implements Initializable {
         tableView.setItems(items);
         reload();
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-        var priority = new TableColumn<ClusterProperty, String>("#");
+        TableColumn<ClusterProperty, String> priority = new TableColumn<>("#");
         priority.setCellFactory(col -> {
             var cell = new TableCell<ClusterProperty, String>();
             StringBinding value = Bindings.when(cell.emptyProperty()).then("").otherwise(cell.indexProperty().add(1).asString());
@@ -91,6 +91,11 @@ public class ClusterController implements Initializable {
                 deleteButton.setDisable(true);
             }
         });
+        tableView.setOnMouseClicked(event -> {
+            if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
+                this.onConnect(null);
+            }
+        });
     }
 
     public void reload() {
@@ -107,7 +112,7 @@ public class ClusterController implements Initializable {
         editButton.getStyleClass().addAll(Styles.FLAT, Styles.ACCENT);
         deleteButton.setGraphic(new FontIcon(Material2AL.DELETE));
         deleteButton.getStyleClass().addAll(Styles.FLAT, Styles.DANGER);
-        connectButton.setGraphic(new FontIcon(Material2AL.CAST_CONNECTED));
+        connectButton.setGraphic(new FontIcon(Material2AL.LINK));
         connectButton.getStyleClass().addAll(Styles.FLAT, Styles.ACCENT);
     }
 
@@ -123,7 +128,7 @@ public class ClusterController implements Initializable {
         FXMLLoader loader = Resources.getLoader("/fxml/cluster-form.fxml");
         ClusterFormController controller = loader.getController();
         String title = isAdd ? SettingClient.bundle().getString("form.new") : SettingClient.bundle().getString("form.edit");
-        formStage = StageUtils.show(loader.getRoot(), title, parentStage);
+        Stage formStage = StageUtils.show(loader.getRoot(), title, parentStage);
         controller.set(this, formStage, property);
     }
 
@@ -136,23 +141,29 @@ public class ClusterController implements Initializable {
         AlertUtils.confirm(SettingClient.bundle().getString("alert.delete.prompt")).ifPresent(type -> {
             ClusterProperty property = tableView.getSelectionModel().getSelectedItem();
             ClusterClient.deleteById(property.getId());
+            MessageUtils.show(SettingClient.bundle().getString("form.delete.success"));
             reload();
         });
     }
 
     public void onConnect(ActionEvent event) {
         ClusterProperty property = tableView.getSelectionModel().getSelectedItem();
+        if (AdminManger.get(property.getId()) != null) {
+            AlertUtils.error(parentStage, "已连接");
+            parentStage.close();
+            return;
+        }
         AdminConnectTask task = new AdminConnectTask(new Admin(property.getServers()).timeout(SettingClient.get().getTimeout()));
         ConnectPane pane = new ConnectPane(e -> task.cancel());
         Stage stage = StageUtils.body(pane, parentStage);
         task.setOnSucceeded(e -> {
             logger.info("连接成功:" + property.getServers());
             try {
-                AdminManger.put(property.getId(),task.get());
-                KafkaAdminClient client = AdminManger.get(property.getId());
-                System.out.println("ccc:"+client);
+                AdminManger.put(property.getId(), task.get());
+                MessageUtils.show(SettingClient.bundle().getString("alert.connect.success"));
+                new ClusterConnectEvent(property).publish();
             } catch (Exception ex) {
-                Platform.runLater(()->{
+                Platform.runLater(() -> {
                     throw new RuntimeException(ex);
                 });
             }

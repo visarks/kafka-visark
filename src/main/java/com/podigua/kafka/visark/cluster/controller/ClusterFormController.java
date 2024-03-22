@@ -77,7 +77,6 @@ public class ClusterFormController implements Initializable {
             nameTile.setDescription("");
         });
         nameField.setPrefWidth(300);
-        nameTile.getStyleClass().add("validate");
     }
 
     private void initStyle() {

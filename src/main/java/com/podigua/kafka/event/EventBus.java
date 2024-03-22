@@ -10,8 +10,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
+ * 事件总线
  *
- **/
+ * @author podigua
+ * @date 2024/03/22
+ */
 public class EventBus {
 
     private final static EventBus INSTANCE = new EventBus();
@@ -33,7 +36,6 @@ public class EventBus {
     public <E extends Event> void subscribe(Class<? extends E> eventType, Consumer<E> subscriber) {
         Objects.requireNonNull(eventType);
         Objects.requireNonNull(subscriber);
-
         Set<Consumer> eventSubscribers = getOrCreateSubscribers(eventType);
         eventSubscribers.add(subscriber);
     }

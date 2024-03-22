@@ -1,9 +1,10 @@
 package com.podigua.kafka.visark.setting.entity;
 
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.podigua.kafka.visark.setting.ThemeChangeEvent;
 import com.podigua.kafka.visark.setting.enums.Language;
 import com.podigua.kafka.visark.setting.enums.Themes;
-import javafx.application.Application;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -28,10 +29,17 @@ public class SettingProperty {
             SettingClient.update(this);
         });
         this.theme.addListener((observable, oldValue, newValue) -> {
-            Application.setUserAgentStylesheet(newValue.theme().getUserAgentStylesheet());
             SettingClient.update(this);
+            new ThemeChangeEvent().publish();
         });
         this.timeout.addListener((observable, oldValue, newValue) -> {
+            SettingClient.update(this);
+        });
+        this.autoTheme.addListener((observable, oldValue, newValue) -> {
+            SettingClient.update(this);
+            new ThemeChangeEvent().publish();
+        });
+        this.openDialog.addListener((observable, oldValue, newValue) -> {
             SettingClient.update(this);
         });
     }
@@ -50,7 +58,16 @@ public class SettingProperty {
     /**
      * 超时时间
      */
-    private final SimpleIntegerProperty timeout = new SimpleIntegerProperty(10);
+    private final SimpleIntegerProperty timeout = new SimpleIntegerProperty(60);
+
+    /**
+     * 自动主题
+     */
+    private final SimpleBooleanProperty autoTheme = new SimpleBooleanProperty(false);
+    /**
+     * 打开对话框
+     */
+    private final SimpleBooleanProperty openDialog = new SimpleBooleanProperty(false);
 
 
     public Language getLanguage() {
@@ -95,5 +112,30 @@ public class SettingProperty {
 
     public SimpleIntegerProperty timeout() {
         return timeout;
+    }
+
+
+    public void setAutoTheme(Boolean autoTheme) {
+        this.autoTheme.set(autoTheme);
+    }
+
+    public Boolean getAutoTheme() {
+        return autoTheme.get();
+    }
+
+    public SimpleBooleanProperty autoTheme() {
+        return autoTheme;
+    }
+
+    public void setOpenDialog(Boolean openDialog) {
+        this.openDialog.set(openDialog);
+    }
+
+    public Boolean getOpenDialog() {
+        return openDialog.get();
+    }
+
+    public SimpleBooleanProperty openDialog() {
+        return openDialog;
     }
 }
