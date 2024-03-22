@@ -14,8 +14,11 @@ import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
 
 /**
+ * “卡头”窗格
  *
- **/
+ * @author podigua
+ * @date 2024/03/23
+ */
 public class CardHeaderPane extends HBox {
     private double x = 0;
     private double y = 0;

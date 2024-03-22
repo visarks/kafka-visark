@@ -48,11 +48,6 @@
         </dependency>
         <dependency>
             <groupId>org.kordamp.ikonli</groupId>
-            <artifactId>ikonli-codicons-pack</artifactId>
-            <version>12.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.kordamp.ikonli</groupId>
             <artifactId>ikonli-antdesignicons-pack</artifactId>
             <version>12.3.1</version>
         </dependency>
@@ -70,11 +65,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-expression</artifactId>
             <version>6.1.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dlsc.formsfx</groupId>
-            <artifactId>formsfx-core</artifactId>
-            <version>11.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.xerial</groupId>

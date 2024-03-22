@@ -17,10 +17,10 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
-import org.kordamp.ikonli.codicons.Codicons;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
+import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
 import java.util.List;
 import java.util.Optional;
@@ -89,7 +89,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
 
     public ClusterNodeChangeListener(TreeView<ClusterNode> treeView) {
         this.treeView = treeView;
-        FontIcon close = new FontIcon(Codicons.CLOSE);
+        FontIcon close = new FontIcon(Material2OutlinedAL.CLOSE);
         close.getStyleClass().add(Styles.DANGER);
         this.disconnect = new MenuItem(SettingClient.bundle().getString("context.menu.disconnect"), close);
         this.consumerDetail = new MenuItem(SettingClient.bundle().getString("context.menu.show.details"), new FontIcon(Material2AL.ARTICLE));
