@@ -26,11 +26,6 @@
     -fx-background-color: -color-bg-default;
 }
 
-#leftPane .split-pane {
-    -fx-background-color: red;
-    -fx-pref-width: 2;
-}
-
 .cluster-tree-view {
     -fx-padding: 0;
     -fx-indent: 0;

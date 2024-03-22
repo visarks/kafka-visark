@@ -141,7 +141,7 @@ public class ClusterController implements Initializable {
         AlertUtils.confirm(SettingClient.bundle().getString("alert.delete.prompt")).ifPresent(type -> {
             ClusterProperty property = tableView.getSelectionModel().getSelectedItem();
             ClusterClient.deleteById(property.getId());
-            MessageUtils.show(SettingClient.bundle().getString("form.delete.success"));
+            MessageUtils.success(SettingClient.bundle().getString("form.delete.success"));
             reload();
         });
     }
@@ -160,7 +160,7 @@ public class ClusterController implements Initializable {
             logger.info("连接成功:" + property.getServers());
             try {
                 AdminManger.put(property.getId(), task.get());
-                MessageUtils.show(SettingClient.bundle().getString("alert.connect.success"));
+                MessageUtils.success(SettingClient.bundle().getString("alert.connect.success"));
                 new ClusterConnectEvent(property).publish();
             } catch (Exception ex) {
                 Platform.runLater(() -> {

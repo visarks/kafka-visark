@@ -2,6 +2,7 @@ package com.podigua.kafka.visark.home.entity;
 
 import com.podigua.kafka.core.utils.UUIDUtils;
 import com.podigua.kafka.visark.home.enums.NodeType;
+import javafx.beans.property.SimpleBooleanProperty;
 
 /**
  * 群集节点
@@ -16,7 +17,7 @@ public class ClusterNode {
      * @return {@link ClusterNode}
      */
     public static ClusterNode root() {
-        return new ClusterNode(null,null, null, null);
+        return new ClusterNode(null, null, null, null);
     }
 
     /**
@@ -27,7 +28,7 @@ public class ClusterNode {
     /**
      * 集群 ID
      */
-    private String clusterId;
+    private final String clusterId;
     /**
      * 标签
      */
@@ -41,6 +42,10 @@ public class ClusterNode {
      * 类型
      */
     private final NodeType type;
+    /**
+     * 加载中
+     */
+    private SimpleBooleanProperty loading = new SimpleBooleanProperty(false);
 
     public ClusterNode(String clusterId, String label, String value, NodeType type) {
         this.clusterId = clusterId;
@@ -83,6 +88,26 @@ public class ClusterNode {
      */
     public NodeType type() {
         return type;
+    }
+
+    /**
+     * 设置加载中
+     *
+     * @param loading 装载
+     * @return {@link ClusterNode}
+     */
+    public ClusterNode loading(boolean loading) {
+        this.loading.set(loading);
+        return this;
+    }
+
+    /**
+     * 获取是否加载中
+     *
+     * @return boolean
+     */
+    public boolean loading() {
+        return loading.get();
     }
 
     /**

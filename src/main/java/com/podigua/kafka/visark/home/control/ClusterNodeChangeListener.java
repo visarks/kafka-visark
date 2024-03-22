@@ -126,7 +126,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                             if (parent != null) {
                                 parent.getSourceChildren().remove(item);
                             }
-                            MessageUtils.show(SettingClient.bundle().getString("form.delete.success"));
+                            MessageUtils.success(SettingClient.bundle().getString("form.delete.success"));
                         });
                         task.setOnFailed(e -> {
                             AlertUtils.error(State.stage(), e.getSource().getException().getMessage());
@@ -148,7 +148,10 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
 
 
     private void refresh(FilterableTreeItem<ClusterNode> item, QueryTask<List<ClusterNode>> task) {
+        item.getValue().loading(true);
+        this.treeView.refresh();
         task.setOnSucceeded(e -> {
+            item.getValue().loading(false);
             try {
                 List<ClusterNode> nodes = task.get();
                 Platform.runLater(() -> {
@@ -157,9 +160,16 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                         item.getSourceChildren().add(new FilterableTreeItem<>(node));
                     }
                 });
+                MessageUtils.success(SettingClient.bundle().getString("alert.refresh.success"));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
+            this.treeView.refresh();
+        });
+        task.setOnFailed(event -> {
+            item.getValue().loading(false);
+            AlertUtils.confirm(event.getSource().getException().getMessage());
+            this.treeView.refresh();
         });
         new Thread(task).start();
     }

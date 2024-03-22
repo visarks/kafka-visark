@@ -108,6 +108,8 @@ public class HomeController implements Initializable {
     }
 
     private void query(FilterableTreeItem<ClusterNode> parent, QueryTask<List<ClusterNode>> task) {
+        parent.getValue().loading(true);
+        this.treeView.refresh();
         task.setOnSucceeded(event -> {
             try {
                 List<ClusterNode> values = task.get();
@@ -115,8 +117,12 @@ public class HomeController implements Initializable {
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
+            parent.getValue().loading(false);
+            this.treeView.refresh();
         });
         task.setOnFailed(event -> {
+            parent.getValue().loading(false);
+            this.treeView.refresh();
             AlertUtils.error(State.stage(), AdminManger.translate(event.getSource().getException()).getMessage());
         });
         new Thread(task).start();
