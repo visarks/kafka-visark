@@ -1,15 +1,23 @@
 package com.podigua.kafka.admin;
 
+import com.podigua.kafka.core.utils.UUIDUtils;
+import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Admin 管理
@@ -19,15 +27,18 @@ import java.util.*;
  */
 public class AdminManger {
     private final static Map<String, KafkaAdminClient> CLIENTS = new HashMap<>();
+    private final static Map<String, ClusterProperty> PROPERTY = new HashMap<>();
 
 
     /**
      * 连接
      *
-     * @param admin 管理
+     * @param property 属性
      * @return {@link KafkaAdminClient}
      */
-    public static KafkaAdminClient connect(Admin admin) {
+    public static KafkaAdminClient connect(ClusterProperty property) {
+        PROPERTY.put(property.getId(), property);
+        Admin admin = new Admin(property);
         KafkaAdminClient client = null;
         try {
             client = (KafkaAdminClient) AdminClient.create(admin.properties());
@@ -65,6 +76,7 @@ public class AdminManger {
      * @param id 编号
      */
     public static void remove(String id) {
+        PROPERTY.remove(id);
         Optional.ofNullable(CLIENTS.get(id)).ifPresent(client -> {
             client.close();
             CLIENTS.remove(id);
@@ -90,6 +102,47 @@ public class AdminManger {
                 return new RuntimeException(SettingClient.bundle().getString("cluster.connect.timeout"));
             }
         }
-        return cause==null?throwable:cause;
+        return cause == null ? throwable : cause;
+    }
+
+    /**
+     * 获取属性
+     *
+     * @param clusterId 集群 ID
+     * @return {@link ClusterProperty}
+     */
+    public static ClusterProperty property(String clusterId) {
+        return PROPERTY.get(clusterId);
+    }
+
+
+    /**
+     * 获取主题偏移量
+     *
+     * @param clusterId 集群 ID
+     * @param topic     主题
+     * @return {@link List}<{@link TopicOffset}>
+     */
+    public static List<TopicOffset> getTopicOffsets(String clusterId,String topic) {
+        ClusterProperty property = property(clusterId);
+        Properties properties = new Admin(property).properties();
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUIDUtils.groupId());
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        List<TopicOffset> result = new ArrayList<>();
+        try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
+            List<TopicPartition> tps = Optional.ofNullable(consumer.partitionsFor(topic, Duration.ofSeconds(SettingClient.get().getTimeout())))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(info -> new TopicPartition(info.topic(), info.partition()))
+                    .collect(Collectors.toList());
+            Map<TopicPartition, Long> begin = consumer.beginningOffsets(tps);
+            Map<TopicPartition, Long> end = consumer.endOffsets(tps);
+            begin.forEach((tp, offset) -> {
+                result.add(new TopicOffset(tp, offset, end.get(tp)));
+            });
+        }
+        return result;
     }
 }

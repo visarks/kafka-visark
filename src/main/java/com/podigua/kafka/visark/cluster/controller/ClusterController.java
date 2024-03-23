@@ -153,7 +153,7 @@ public class ClusterController implements Initializable {
             parentStage.close();
             return;
         }
-        AdminConnectTask task = new AdminConnectTask(new Admin(property.getServers()).timeout(SettingClient.get().getTimeout()));
+        AdminConnectTask task = new AdminConnectTask(property);
         ConnectPane pane = new ConnectPane(e -> task.cancel());
         Stage stage = StageUtils.body(pane, parentStage);
         task.setOnSucceeded(e -> {

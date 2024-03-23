@@ -1,5 +1,6 @@
 package com.podigua.kafka.admin;
 
+import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import javafx.concurrent.Task;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 
@@ -10,14 +11,14 @@ import org.apache.kafka.clients.admin.KafkaAdminClient;
  * @date 2024/03/21
  */
 public class AdminConnectTask extends Task<KafkaAdminClient> {
-    private final Admin admin;
+    private final ClusterProperty property;
 
-    public AdminConnectTask(Admin admin) {
-        this.admin = admin;
+    public AdminConnectTask(ClusterProperty property) {
+        this.property = property;
     }
 
     @Override
     protected KafkaAdminClient call() throws Exception {
-        return AdminManger.connect(admin);
+        return AdminManger.connect(property);
     }
 }

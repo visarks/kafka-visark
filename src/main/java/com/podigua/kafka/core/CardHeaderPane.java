@@ -38,7 +38,7 @@ public class CardHeaderPane extends HBox {
             close.setOnAction(event->runnable.run());
         }
 
-        this.label.getStyleClass().add(Styles.TITLE_4);
+        this.label.getStyleClass().add(Styles.TITLE_3);
         this.setAlignment(Pos.CENTER_LEFT);
         HBox center = new HBox();
         center.setAlignment(Pos.CENTER_LEFT);

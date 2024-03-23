@@ -34,7 +34,6 @@ public class StageUtils {
         scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
         stage.setScene(scene);
         stage.initOwner(window);
-        stage.setTitle(title);
         stage.show();
         return stage;
     }

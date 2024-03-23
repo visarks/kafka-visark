@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * @author podigua
  * @date 2024/03/22
  */
-public class QueryConsumersTask extends QueryTask<List<ClusterNode>> {
+public class  QueryConsumersTask extends QueryTask<List<ClusterNode>> {
 
 
     public QueryConsumersTask(String clusterId) {

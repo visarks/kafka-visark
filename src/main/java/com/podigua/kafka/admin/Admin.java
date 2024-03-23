@@ -1,5 +1,7 @@
 package com.podigua.kafka.admin;
 
+import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
+import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 
 import java.util.Properties;
@@ -20,6 +22,11 @@ public class Admin {
      * 连接超时时间
      */
     private Integer timeout = 10000;
+
+    public Admin(ClusterProperty property) {
+        this.bootstrapServers = property.getServers();
+        timeout(SettingClient.get().getTimeout());
+    }
 
     public Admin(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;

@@ -17,7 +17,6 @@ import java.util.Properties;
 public class Test {
     public static void main(String[] args) {
         Properties properties = new Properties();
-
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, "group1");
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");

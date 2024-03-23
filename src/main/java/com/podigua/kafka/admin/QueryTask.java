@@ -1,5 +1,6 @@
 package com.podigua.kafka.admin;
 
+import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.concurrent.Task;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
@@ -42,5 +43,13 @@ public abstract class QueryTask<T> extends Task<T> {
      */
     protected KafkaAdminClient client() {
         return AdminManger.get(clusterId);
+    }
+    /**
+     * 客户
+     *
+     * @return {@link KafkaAdminClient}
+     */
+    protected ClusterProperty property() {
+        return AdminManger.property(clusterId);
     }
 }

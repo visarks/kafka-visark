@@ -3,6 +3,7 @@ package com.podigua.kafka.visark.home.entity;
 import com.podigua.kafka.core.utils.UUIDUtils;
 import com.podigua.kafka.visark.home.enums.NodeType;
 import javafx.beans.property.SimpleBooleanProperty;
+import org.apache.kafka.common.Node;
 
 /**
  * 群集节点
@@ -37,7 +38,6 @@ public class ClusterNode {
      * 值
      */
     private final String value;
-
     /**
      * 类型
      */
@@ -45,13 +45,38 @@ public class ClusterNode {
     /**
      * 加载中
      */
-    private SimpleBooleanProperty loading = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty loading = new SimpleBooleanProperty(false);
+
+    /**
+     * 原生值
+     */
+    private Object nativeValue;
 
     public ClusterNode(String clusterId, String label, String value, NodeType type) {
         this.clusterId = clusterId;
         this.label = label;
         this.value = value;
         this.type = type;
+    }
+
+    /**
+     * 原生值
+     *
+     * @param nativeValue 原生值
+     * @return {@link ClusterNode}
+     */
+    public ClusterNode nativeValue(Object nativeValue) {
+        this.nativeValue = nativeValue;
+        return this;
+    }
+
+    /**
+     * 原生值
+     *
+     * @return {@link T}
+     */
+    public <T> T nativeValue() {
+        return (T) this.nativeValue;
     }
 
     /**
@@ -140,8 +165,8 @@ public class ClusterNode {
      * @param clusterId 集群 ID
      * @return {@link ClusterNode}
      */
-    public static ClusterNode node(String clusterId, String label, String value) {
-        return new ClusterNode(clusterId, label, value, NodeType.node);
+    public static ClusterNode node(String clusterId, String label, String value, Node node) {
+        return new ClusterNode(clusterId, label, value, NodeType.node).nativeValue(node);
     }
 
     /**
@@ -187,6 +212,7 @@ public class ClusterNode {
     public static ClusterNode consumer(String clusterId, String label, String value) {
         return new ClusterNode(clusterId, label, value, NodeType.consumer);
     }
+
 
     @Override
     public int hashCode() {
