@@ -5,6 +5,7 @@ import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
 import com.podigua.kafka.admin.task.QuerySingleConsumerTask;
 import com.podigua.kafka.core.utils.NodeUtils;
+import com.podigua.kafka.visark.home.control.AssignmentTableCell;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -17,16 +18,17 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.stage.PopupWindow;
 import javafx.util.Callback;
+import javafx.util.Duration;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
-import org.apache.kafka.clients.admin.MemberAssignment;
 import org.apache.kafka.clients.admin.MemberDescription;
 import org.apache.kafka.common.ConsumerGroupState;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.Comparator;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 显示consumer 详情
@@ -44,11 +46,6 @@ public class ShowConsumerDetailPane extends BaseRefreshPane {
      * 根
      */
     private final AnchorPane root = new AnchorPane();
-
-    /**
-     * 使用者主题分区窗格
-     */
-    private final ConsumerTopicPartitionPane consumerTopicPartitionPane = new ConsumerTopicPartitionPane();
 
     /**
      * 是简单消费者群体
@@ -184,45 +181,14 @@ public class ShowConsumerDetailPane extends BaseRefreshPane {
         host.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().host()));
         host.setPrefWidth(120);
 
-        TableColumn<MemberDescription, Set<TopicPartition>> counts = new TableColumn<>("Counts");
-        counts.setCellFactory(new Callback<>() {
-            @Override
-            public TableCell<MemberDescription, Set<TopicPartition>> call(TableColumn<MemberDescription, Set<TopicPartition>> memberDescriptionMemberDescriptionTableColumn) {
-                return new TableCell<>() {
+        TableColumn<MemberDescription, Number> assignment = new TableColumn<>("Assignment");
+        assignment.setCellFactory(column -> new AssignmentTableCell());
+        assignment.setCellValueFactory(features -> new SimpleObjectProperty<>(features.getValue().assignment().topicPartitions().size()));
+        assignment.setPrefWidth(120);
 
-                    private final Tooltip tooltip = new Tooltip();
-                    private final Hyperlink link = new Hyperlink();
-
-                    @Override
-                    protected void updateItem(Set<TopicPartition> item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null | empty) {
-                            return;
-                        }
-                        link.setText(item.size() + "");
-                        link.setTooltip(tooltip);
-                        tooltip.setGraphic(consumerTopicPartitionPane);
-                        setGraphic(link);
-                        setText(link.getText());
-                    }
-                };
-            }
-        });
-        counts.setCellValueFactory(memberDescriptionMemberDescriptionCellDataFeatures -> null);
-        counts.setPrefWidth(60);
-
-        memberId.prefWidthProperty().bind(tableView.widthProperty().subtract(host.prefWidthProperty()).subtract(counts.prefWidthProperty()).divide(3).multiply(2));
-        clientId.prefWidthProperty().bind(tableView.widthProperty().subtract(host.prefWidthProperty()).subtract(counts.prefWidthProperty()).divide(3).subtract(10));
+        memberId.prefWidthProperty().bind(tableView.widthProperty().subtract(host.prefWidthProperty()).subtract(assignment.prefWidthProperty()).divide(3).multiply(2));
+        clientId.prefWidthProperty().bind(tableView.widthProperty().subtract(host.prefWidthProperty()).subtract(assignment.prefWidthProperty()).divide(3).subtract(10));
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-        tableView.getColumns().addAll(memberId, clientId, host, counts);
-        tableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                MemberAssignment assignment = newValue.assignment();
-                if (assignment != null) {
-                    Set<TopicPartition> partitions = assignment.topicPartitions();
-                    consumerTopicPartitionPane.reset(partitions.stream().sorted(Comparator.comparing(TopicPartition::topic).thenComparing(TopicPartition::partition)).toList());
-                }
-            }
-        });
+        tableView.getColumns().addAll(memberId, clientId, host, assignment);
     }
 }

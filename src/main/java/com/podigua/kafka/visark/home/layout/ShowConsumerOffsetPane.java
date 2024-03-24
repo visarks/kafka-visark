@@ -99,29 +99,28 @@ public class ShowConsumerOffsetPane extends BorderPane {
 
         TableColumn<ConsumerOffset, String> partition = new TableColumn<>("Partition");
         partition.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().partition() + ""));
-        partition.setResizable(false);
-        partition.setSortable(false);
         partition.setPrefWidth(80);
 
         TableColumn<ConsumerOffset, String> start = new TableColumn<>("Start");
         start.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().start() + ""));
-        start.setSortable(false);
 
         TableColumn<ConsumerOffset, String> end = new TableColumn<>("End");
         end.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().end() + ""));
-        end.setSortable(false);
 
         TableColumn<ConsumerOffset, String> offset = new TableColumn<>("Offset");
         offset.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().offset() + ""));
-        offset.setSortable(false);
 
-        topic.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(5).multiply(2));
-        start.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(5));
-        end.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(5));
-        offset.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(5));
+        TableColumn<ConsumerOffset, String> tag = new TableColumn<>("Tag");
+        tag.setCellValueFactory(param -> new SimpleStringProperty((param.getValue().end()-param.getValue().offset())+ ""));
+
+        topic.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6).multiply(2));
+        start.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6));
+        end.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6));
+        offset.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6));
+        tag.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6).subtract(10));
 
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-        tableView.getColumns().addAll(topic,partition, start, end,offset);
+        tableView.getColumns().addAll(topic,partition, start, end,offset,tag);
     }
 
 

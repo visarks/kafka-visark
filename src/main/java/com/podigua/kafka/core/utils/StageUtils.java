@@ -21,6 +21,28 @@ public class StageUtils {
      * @param title  标题
      * @return {@link Stage}
      */
+    public static Stage show(Parent parent, String title, Modality modality) {
+        Stage stage = new Stage();
+        Card card = new Card();
+        CardHeaderPane header = new CardHeaderPane(stage,title,null);
+        card.setHeader(header);
+        card.setBody(parent);
+        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.initModality(modality);
+        Scene scene = new Scene(card);
+        scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
+        stage.setScene(scene);
+        stage.initOwner(State.stage());
+        stage.show();
+        return stage;
+    }
+    /**
+     * 显示
+     *
+     * @param parent 父母
+     * @param title  标题
+     * @return {@link Stage}
+     */
     public static Stage show(Parent parent, String title, Window window) {
         Stage stage = new Stage();
         Card card = new Card();
@@ -28,7 +50,6 @@ public class StageUtils {
         card.setHeader(header);
         card.setBody(parent);
         stage.initStyle(StageStyle.TRANSPARENT);
-        stage.setResizable(false);
         stage.initModality(Modality.APPLICATION_MODAL);
         Scene scene = new Scene(card);
         scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
@@ -37,6 +58,7 @@ public class StageUtils {
         stage.show();
         return stage;
     }
+
 
     /**
      *
@@ -50,7 +72,6 @@ public class StageUtils {
         Card card = new Card();
         card.setBody(body);
         stage.initStyle(StageStyle.TRANSPARENT);
-        stage.setResizable(false);
         stage.initModality(Modality.APPLICATION_MODAL);
         Scene scene = new Scene(card);
         scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());

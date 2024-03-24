@@ -84,22 +84,22 @@ public class ShowTopicOffsetPane extends BaseRefreshPane {
     private void setTableColumn() {
         TableColumn<TopicOffset, String> partition = new TableColumn<>("Partition");
         partition.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().partition() + ""));
-        partition.setResizable(false);
-        partition.setSortable(false);
-        partition.setPrefWidth(80);
+        partition.setPrefWidth(100);
 
         TableColumn<TopicOffset, String> start = new TableColumn<>("Start");
         start.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().start() + ""));
-        start.setSortable(false);
 
         TableColumn<TopicOffset, String> end = new TableColumn<>("End");
         end.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().end() + ""));
-        end.setSortable(false);
 
-        start.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(2));
-        end.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(2).subtract(10));
+        TableColumn<TopicOffset, String> counts = new TableColumn<>("Counts");
+        counts.setCellValueFactory(param -> new SimpleStringProperty((param.getValue().end()-param.getValue().start()) + ""));
+
+        start.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(3));
+        end.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(3));
+        counts.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(3).subtract(10));
 
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-        tableView.getColumns().addAll(partition, start, end);
+        tableView.getColumns().addAll(partition, start, end,counts);
     }
 }

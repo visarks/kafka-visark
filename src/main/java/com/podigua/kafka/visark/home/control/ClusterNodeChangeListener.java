@@ -21,6 +21,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -129,13 +130,24 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         showClusterAction();
         this.addPartition.setOnAction(event -> checkTopicExists((item, value) -> getCurrentPartitions((current) -> addPartition(value, current))));
         addRefreshConsumerAction();
-        showMemberConsumerAction();
+        showConsumerDetailsAction();
+        showConsumerOffsetAction();
         this.offsetTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::topicOffset));
+    }
+
+    private void showConsumerOffsetAction() {
+        this.offsetConsumer.setOnAction(event -> {
+            selected((item,value)->{
+                ShowConsumerOffsetPane pane = new ShowConsumerOffsetPane(value.clusterId(), value.label());
+                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("context.menu.offset"), Modality.NONE);
+                pane.setOnClose(e -> stage.close());
+            });
+        });
     }
 
     private static void topicOffset(FilterableTreeItem<ClusterNode> item, ClusterNode value) {
         ShowTopicOffsetPane pane = new ShowTopicOffsetPane(value.clusterId(), value.label());
-        Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("context.menu.offset"));
+        Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("context.menu.offset"), Modality.NONE);
         pane.setOnClose(e -> stage.close());
     }
 
@@ -168,11 +180,11 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
     /**
      * 显示会员消费者操作
      */
-    private void showMemberConsumerAction() {
+    private void showConsumerDetailsAction() {
         this.consumerDetail.setOnAction(event -> {
             selected((item,value)->{
                 ShowConsumerDetailPane pane = new ShowConsumerDetailPane(value.clusterId(), value.label());
-                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("details.information"));
+                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("details.information"), Modality.NONE);
                 pane.setOnClose(e -> stage.close());
             });
         });
@@ -182,7 +194,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         this.showCluster.setOnAction(event -> {
             selected((item,value)->{
                 ShowClusterPane pane = new ShowClusterPane(value.clusterId());
-                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("cluster.detail.title"));
+                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("cluster.detail.title"), Modality.NONE);
                 pane.setOnClose(e -> stage.close());
             });
         });
@@ -212,7 +224,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
      */
     private static void addPartition(ClusterNode value, Integer size) {
         AddPartitionPane pane = new AddPartitionPane(value.clusterId(), value.label(), size);
-        Stage stage = StageUtils.show(pane, value.label());
+        Stage stage = StageUtils.show(pane, value.label(), Modality.NONE);
         pane.setOnCancel(e1 -> stage.close());
         pane.setOnSave(success -> {
             stage.close();
@@ -222,7 +234,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
 
     private static void showPartition(FilterableTreeItem<ClusterNode> item, ClusterNode value) {
         ShowPartitionPane pane = new ShowPartitionPane(value.clusterId(), value.label());
-        Stage stage = StageUtils.show(pane, value.label());
+        Stage stage = StageUtils.show(pane, value.label(), Modality.NONE);
         pane.setOnClose(e -> stage.close());
     }
 
@@ -266,7 +278,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         this.addTopic.setOnAction(event -> {
             item().ifPresent(item -> ofNullable(item.getValue()).ifPresent(value -> {
                 AddTopicPane pane = new AddTopicPane(value.clusterId());
-                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("form.create.topic.title"));
+                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("form.create.topic.title"), Modality.NONE);
                 pane.setOnCancel(e -> stage.close());
                 pane.setOnSave(success -> {
                     stage.close();
@@ -385,7 +397,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                 case topic ->
                         items.addAll(showPartition, offsetTopic, addPartition, splitter, deleteTopic, splitter1, copy);
                 case consumers -> items.addAll(refreshConsumer);
-                case consumer -> items.addAll(offsetConsumer, consumerDetail, splitter, copy);
+                case consumer -> items.addAll(consumerDetail,offsetConsumer , splitter, copy);
             }
         });
     }

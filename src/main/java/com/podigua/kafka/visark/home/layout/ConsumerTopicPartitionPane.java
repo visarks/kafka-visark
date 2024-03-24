@@ -29,7 +29,8 @@ public class ConsumerTopicPartitionPane extends VBox {
         topic.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).subtract(10));
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
         tableView.getColumns().addAll(topic, partition);
-        tableView.setVisible(false);
+        this.getChildren().add(tableView);
+        this.setPrefSize(300,200);
     }
 
     public void reset(List<TopicPartition> topicPartitions) {
