@@ -78,10 +78,13 @@ public class AdminManger {
     public static void remove(String id) {
         PROPERTY.remove(id);
         Optional.ofNullable(CLIENTS.get(id)).ifPresent(client -> {
-            client.close();
+            client.close(Duration.ofSeconds(10));
             CLIENTS.remove(id);
         });
+    }
 
+    public static void close(KafkaAdminClient client){
+        client.close(Duration.ofSeconds(10));
     }
 
     /**

@@ -6,6 +6,7 @@ import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.admin.executor.ConsumerExistExecutor;
 import com.podigua.kafka.admin.executor.GetPartitionTaskExecutor;
 import com.podigua.kafka.admin.executor.TopicExistExecutor;
+import com.podigua.kafka.admin.task.DeleteConsumerTask;
 import com.podigua.kafka.admin.task.DeleteTopicTask;
 import com.podigua.kafka.admin.task.QueryConsumersTask;
 import com.podigua.kafka.admin.task.QueryTopicsTask;
@@ -70,6 +71,10 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
      */
     private final MenuItem deleteTopic;
     /**
+     * 删除消费者
+     */
+    private final MenuItem deleteConsumer;
+    /**
      * 偏移主题
      */
     private final MenuItem offsetTopic;
@@ -115,6 +120,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         FontIcon delete = new FontIcon(Material2AL.DELETE);
         delete.getStyleClass().add(Styles.DANGER);
         this.deleteTopic = new MenuItem(SettingClient.bundle().getString("context.menu.delete"), delete);
+        this.deleteConsumer = new MenuItem(SettingClient.bundle().getString("context.menu.delete"), delete);
         this.showPartition = new MenuItem(SettingClient.bundle().getString("context.menu.show.partitions"), new FontIcon(Material2MZ.REMOVE_RED_EYE));
         this.refreshConsumer = new MenuItem(SettingClient.bundle().getString("refresh"), new FontIcon(Material2MZ.REFRESH));
         this.copy = new MenuItem(SettingClient.bundle().getString("context.menu.copy"), new FontIcon(AntDesignIconsOutlined.COPY));
@@ -125,6 +131,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         this.copy.setOnAction(event -> selected(ClusterNodeChangeListener::copy));
         addRefreshTopicAction();
         this.deleteTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::executeDeleteTopic));
+        deleteConsumerAction();
         addTopicAction();
         this.showPartition.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::showPartition));
         showClusterAction();
@@ -133,6 +140,27 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         showConsumerDetailsAction();
         showConsumerOffsetAction();
         this.offsetTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::topicOffset));
+    }
+
+    private void deleteConsumerAction() {
+        this.deleteConsumer.setOnAction(event -> {
+            selected((item,value)->{
+                AlertUtils.confirm(SettingClient.bundle().getString("alert.delete.prompt")).ifPresent(type -> {
+                    DeleteConsumerTask task = new DeleteConsumerTask(value.clusterId(), value.label());
+                    task.setOnSucceeded(e -> {
+                        FilterableTreeItem<ClusterNode> parent = (FilterableTreeItem<ClusterNode>) item.getParent();
+                        if (parent != null) {
+                            parent.getSourceChildren().remove(item);
+                        }
+                        MessageUtils.success(SettingClient.bundle().getString("form.delete.success"));
+                    });
+                    task.setOnFailed(e -> {
+                        AlertUtils.error(State.stage(), e.getSource().getException().getMessage());
+                    });
+                    new Thread(task).start();
+                });
+            });
+        });
     }
 
     private void showConsumerOffsetAction() {
@@ -397,7 +425,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                 case topic ->
                         items.addAll(showPartition, offsetTopic, addPartition, splitter, deleteTopic, splitter1, copy);
                 case consumers -> items.addAll(refreshConsumer);
-                case consumer -> items.addAll(consumerDetail,offsetConsumer , splitter, copy);
+                case consumer -> items.addAll(consumerDetail,offsetConsumer , splitter, deleteConsumer,splitter1, copy);
             }
         });
     }
