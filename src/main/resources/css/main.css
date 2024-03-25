@@ -14,11 +14,12 @@
 .tile-base .description {
     -fx-font-size: 0.85em;
 }
-#leftPane .container{
+
+#leftPane .container {
     -fx-background-color: -color-bg-default;
 }
 
-#leftPane .container .tree-root{
+#leftPane .container .tree-root {
     -fx-padding: 3;
 }
 
@@ -53,4 +54,8 @@
     -fx-padding: 0 6px 0 1.2em;
     -fx-border-color: -color-border-muted;
     -fx-border-width: 0 0 0 1;
+}
+
+.radio-button {
+    -fx-background-color: transparent;
 }

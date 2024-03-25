@@ -92,7 +92,7 @@ public class ShowTopicOffsetPane extends BaseRefreshPane {
         TableColumn<TopicOffset, String> end = new TableColumn<>("End");
         end.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().end() + ""));
 
-        TableColumn<TopicOffset, String> counts = new TableColumn<>("Counts");
+        TableColumn<TopicOffset, String> counts = new TableColumn<>("Messages");
         counts.setCellValueFactory(param -> new SimpleStringProperty((param.getValue().end()-param.getValue().start()) + ""));
 
         start.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(3));

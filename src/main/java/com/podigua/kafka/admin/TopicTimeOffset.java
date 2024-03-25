@@ -8,7 +8,7 @@ import org.apache.kafka.common.TopicPartition;
  * @author podigua
  * @date 2024/03/24
  */
-public record TopicOffset(TopicPartition topicPartition, Long start, Long end) {
+public record TopicTimeOffset(TopicPartition topicPartition, Long timestamp, Long offset) {
 
     /**
      * 主题分区
@@ -21,23 +21,23 @@ public record TopicOffset(TopicPartition topicPartition, Long start, Long end) {
     }
 
     /**
-     * 开始
+     * 时间
      *
      * @return {@link Long}
      */
     @Override
-    public Long start() {
-        return start;
+    public Long timestamp() {
+        return timestamp;
     }
 
     /**
-     * 结束
+     * 偏移
      *
      * @return {@link Long}
      */
     @Override
-    public Long end() {
-        return end;
+    public Long offset() {
+        return offset;
     }
 
     /**

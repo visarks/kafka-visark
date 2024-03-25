@@ -230,6 +230,15 @@ public class ClusterNode {
         return false;
     }
 
+    /**
+     * 唯一键
+     *
+     * @return {@link String}
+     */
+    public String id() {
+        return this.id;
+    }
+
     @Override
     public String toString() {
         return label;

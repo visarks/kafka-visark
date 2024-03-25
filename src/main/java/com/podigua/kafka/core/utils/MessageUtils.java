@@ -43,8 +43,8 @@ public class MessageUtils {
         final var notice = new Notification(message, new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE));
         notice.setPrefWidth(300);
         notice.getStyleClass().addAll(Styles.ACCENT, Styles.ELEVATED_1);
-        AnchorPane.setTopAnchor(notice, 52.0);
-        AnchorPane.setRightAnchor(notice, 8.0);
+        AnchorPane.setTopAnchor(notice, 5.0);
+        AnchorPane.setRightAnchor(notice, 5.0);
         notice.setOnClose(e -> {
             var out = Animations.slideOutRight(notice, Duration.millis(300));
             out.playFromStart();

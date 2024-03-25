@@ -2,6 +2,7 @@ package com.podigua.kafka.visark.home.layout;
 
 import atlantafx.base.theme.Tweaks;
 import com.podigua.kafka.admin.task.QueryNodesTask;
+import com.podigua.kafka.core.event.LoadingEvent;
 import com.podigua.kafka.core.utils.NodeUtils;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.setting.SettingClient;
@@ -27,10 +28,6 @@ public class ShowClusterPane extends BaseRefreshPane {
      */
     private final AnchorPane root = new AnchorPane();
     /**
-     * 加载中
-     */
-    private final HBox loading = new HBox(NodeUtils.progress(), new Label(SettingClient.bundle().getString("form.loading")));
-    /**
      * 表视图
      */
     private final TableView<ClusterNode> tableView = new TableView<>();
@@ -48,30 +45,25 @@ public class ShowClusterPane extends BaseRefreshPane {
      */
     protected void reload() {
         tableView.getItems().clear();
-        this.loading.setVisible(true);
+        LoadingEvent.LOADING.publish();
         QueryNodesTask task = new QueryNodesTask(clusterId());
         task.setOnSucceeded(event -> {
-            this.loading.setVisible(false);
+            LoadingEvent.STOP.publish();
             try {
                 tableView.getItems().addAll(task.get());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-        task.setOnFailed(event -> this.loading.setVisible(false));
+        task.setOnFailed(event -> {
+            LoadingEvent.STOP.publish();
+        });
         new Thread(task).start();
     }
 
     private void addCenter() {
-        VBox box = new VBox();
         setTableColumn();
-        box.getChildren().add(tableView);
-        NodeUtils.setAnchor(box, 0);
-        loading.setSpacing(10);
-        loading.setAlignment(Pos.CENTER);
-        NodeUtils.setAnchor(loading, 0);
-        root.getChildren().addAll(box, loading);
-        this.setCenter(root);
+        this.setCenter(tableView);
     }
 
     private void setTableColumn() {

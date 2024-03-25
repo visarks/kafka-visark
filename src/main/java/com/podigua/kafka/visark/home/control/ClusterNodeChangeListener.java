@@ -15,6 +15,7 @@ import com.podigua.kafka.core.utils.ClipboardUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
+import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
 import com.podigua.kafka.visark.home.layout.*;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.application.Platform;
@@ -55,6 +56,10 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
      */
     private final MenuItem showCluster;
     /**
+     * consumer详情
+     */
+    private final MenuItem showConsumer;
+    /**
      * 添加主题
      */
     private final MenuItem addTopic;
@@ -78,14 +83,6 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
      * 偏移主题
      */
     private final MenuItem offsetTopic;
-    /**
-     * 偏移消费品
-     */
-    private final MenuItem offsetConsumer;
-    /**
-     * 会员消费者
-     */
-    private final MenuItem consumerDetail;
     /**
      * 添加分区
      */
@@ -111,11 +108,10 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         close.getStyleClass().add(Styles.DANGER);
         this.disconnect = new MenuItem(SettingClient.bundle().getString("context.menu.disconnect"), close);
         this.showCluster = new MenuItem(SettingClient.bundle().getString("context.menu.show.details"), new FontIcon(Material2MZ.REMOVE_RED_EYE));
+        this.showConsumer = new MenuItem(SettingClient.bundle().getString("context.menu.show.details"), new FontIcon(Material2MZ.REMOVE_RED_EYE));
         this.addTopic = new MenuItem(SettingClient.bundle().getString("context.menu.create"), new FontIcon(Material2AL.ADD));
         this.refreshTopic = new MenuItem(SettingClient.bundle().getString("refresh"), new FontIcon(Material2MZ.REFRESH));
         this.offsetTopic = new MenuItem(SettingClient.bundle().getString("context.menu.offset"), new FontIcon(Material2MZ.OUTLINED_FLAG));
-        this.offsetConsumer = new MenuItem(SettingClient.bundle().getString("context.menu.offset"), new FontIcon(Material2MZ.OUTLINED_FLAG));
-        this.consumerDetail = new MenuItem(SettingClient.bundle().getString("context.menu.show.details"), new FontIcon(Material2MZ.REMOVE_RED_EYE));
         this.addPartition = new MenuItem(SettingClient.bundle().getString("context.menu.add.partition"), new FontIcon(Material2AL.ADD));
         FontIcon delete = new FontIcon(Material2AL.DELETE);
         delete.getStyleClass().add(Styles.DANGER);
@@ -135,16 +131,17 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         addTopicAction();
         this.showPartition.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::showPartition));
         showClusterAction();
+        this.showConsumer.setOnAction(event->selected((item,value)->{
+            new ClusterPublishEvent(value).publish();
+        }));
         this.addPartition.setOnAction(event -> checkTopicExists((item, value) -> getCurrentPartitions((current) -> addPartition(value, current))));
         addRefreshConsumerAction();
-        showConsumerDetailsAction();
-        showConsumerOffsetAction();
         this.offsetTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::topicOffset));
     }
 
     private void deleteConsumerAction() {
         this.deleteConsumer.setOnAction(event -> {
-            selected((item,value)->{
+            selected((item, value) -> {
                 AlertUtils.confirm(SettingClient.bundle().getString("alert.delete.prompt")).ifPresent(type -> {
                     DeleteConsumerTask task = new DeleteConsumerTask(value.clusterId(), value.label());
                     task.setOnSucceeded(e -> {
@@ -163,15 +160,6 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         });
     }
 
-    private void showConsumerOffsetAction() {
-        this.offsetConsumer.setOnAction(event -> {
-            selected((item,value)->{
-                ShowConsumerOffsetPane pane = new ShowConsumerOffsetPane(value.clusterId(), value.label());
-                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("context.menu.offset"), Modality.NONE);
-                pane.setOnClose(e -> stage.close());
-            });
-        });
-    }
 
     private static void topicOffset(FilterableTreeItem<ClusterNode> item, ClusterNode value) {
         ShowTopicOffsetPane pane = new ShowTopicOffsetPane(value.clusterId(), value.label());
@@ -205,22 +193,10 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
             executor.execute();
         });
     }
-    /**
-     * 显示会员消费者操作
-     */
-    private void showConsumerDetailsAction() {
-        this.consumerDetail.setOnAction(event -> {
-            selected((item,value)->{
-                ShowConsumerDetailPane pane = new ShowConsumerDetailPane(value.clusterId(), value.label());
-                Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("details.information"), Modality.NONE);
-                pane.setOnClose(e -> stage.close());
-            });
-        });
-    }
 
     private void showClusterAction() {
         this.showCluster.setOnAction(event -> {
-            selected((item,value)->{
+            selected((item, value) -> {
                 ShowClusterPane pane = new ShowClusterPane(value.clusterId());
                 Stage stage = StageUtils.show(pane, SettingClient.bundle().getString("cluster.detail.title"), Modality.NONE);
                 pane.setOnClose(e -> stage.close());
@@ -425,7 +401,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                 case topic ->
                         items.addAll(showPartition, offsetTopic, addPartition, splitter, deleteTopic, splitter1, copy);
                 case consumers -> items.addAll(refreshConsumer);
-                case consumer -> items.addAll(consumerDetail,offsetConsumer , splitter, deleteConsumer,splitter1, copy);
+                case consumer -> items.addAll(showConsumer,splitter,deleteConsumer, splitter1, copy);
             }
         });
     }

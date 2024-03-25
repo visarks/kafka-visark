@@ -5,32 +5,41 @@ import org.apache.kafka.common.TopicPartition;
 /**
  * 消费者偏移量
  *
+ * @param topicPartition 主题分区
+ * @param start          开始
+ * @param end            结束
+ * @param offset         抵消
  * @author podigua
  * @date 2024/03/24
  */
-public class ConsumerOffset {
-    /**
-     * 主题分区
-     */
-    private final TopicPartition topicPartition;
-    /**
-     * 开始
-     */
-    private final Long start;
-    /**
-     * 结束
-     */
-    private final Long end;
-    /**
-     * 抵消
-     */
-    private final Long offset;
+public record ConsumerOffset(TopicPartition topicPartition, String host, String memberId, String clientId, Long start,
+                             Long end, Long offset) {
 
-    public ConsumerOffset(TopicPartition topicPartition, Long start, Long end, Long offset) {
-        this.topicPartition = topicPartition;
-        this.start = start;
-        this.end = end;
-        this.offset = offset;
+    /**
+     * 主机
+     *
+     * @return {@link String}
+     */
+    public String host() {
+        return host;
+    }
+
+    /**
+     * 会员 ID
+     *
+     * @return {@link String}
+     */
+    public String memberId() {
+        return memberId;
+    }
+
+    /**
+     * 客户端 ID
+     *
+     * @return {@link String}
+     */
+    public String clientId() {
+        return clientId;
     }
 
     /**
@@ -38,6 +47,7 @@ public class ConsumerOffset {
      *
      * @return {@link TopicPartition}
      */
+    @Override
     public TopicPartition topicPartition() {
         return topicPartition;
     }
@@ -47,6 +57,7 @@ public class ConsumerOffset {
      *
      * @return {@link Long}
      */
+    @Override
     public Long start() {
         return start;
     }
@@ -56,6 +67,7 @@ public class ConsumerOffset {
      *
      * @return {@link Long}
      */
+    @Override
     public Long end() {
         return end;
     }
@@ -83,6 +95,7 @@ public class ConsumerOffset {
      *
      * @return {@link Long}
      */
+    @Override
     public Long offset() {
         return this.offset;
     }

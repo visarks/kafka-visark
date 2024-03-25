@@ -3,8 +3,9 @@ package com.podigua.kafka.admin.task;
 import com.podigua.kafka.admin.AdminManger;
 import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.core.utils.Lists;
-import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.TopicCollection;
+import org.apache.kafka.clients.admin.DeleteConsumerGroupsOptions;
+import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
 
 /**
  * 删除Consumer任务

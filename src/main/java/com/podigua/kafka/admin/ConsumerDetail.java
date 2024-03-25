@@ -21,9 +21,6 @@ public class ConsumerDetail {
     private ConsumerGroupState state = ConsumerGroupState.UNKNOWN;
     private Node coordinator = Node.noNode();
 
-    public ConsumerDetail() {
-
-    }
 
     public ConsumerDetail(ConsumerGroupDescription description) {
         this.groupId = description.groupId();

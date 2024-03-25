@@ -9,6 +9,7 @@ import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
@@ -17,6 +18,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -144,6 +146,42 @@ public class AdminManger {
             Map<TopicPartition, Long> end = consumer.endOffsets(tps);
             begin.forEach((tp, offset) -> {
                 result.add(new TopicOffset(tp, offset, end.get(tp)));
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 获取主题偏移量
+     *
+     * @param clusterId 集群 ID
+     * @param topic     主题
+     * @return {@link List}<{@link TopicOffset}>
+     */
+    public static List<TopicTimeOffset> getTopicOffsetsByTime(String clusterId,String topic,Long timestamp) {
+        ClusterProperty property = property(clusterId);
+        Properties properties = new Admin(property).properties();
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUIDUtils.groupId());
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+        List<TopicTimeOffset> result = new ArrayList<>();
+        try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
+            List<TopicPartition> tps = Optional.ofNullable(consumer.partitionsFor(topic, Duration.ofSeconds(SettingClient.get().getTimeout())))
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(info -> new TopicPartition(info.topic(), info.partition()))
+                    .collect(Collectors.toList());
+
+            // 使用offsetsForTimes()方法根据时间戳查找offset
+            Map<TopicPartition, Long> timestampsToSearch = tps.stream()
+                    .collect(Collectors.toMap(Function.identity(), tp -> timestamp));
+            Map<TopicPartition, OffsetAndTimestamp> offsetTimestamps = consumer.offsetsForTimes(timestampsToSearch);
+
+            offsetTimestamps.forEach((tp, offset) -> {
+                if(offset!=null){
+                    result.add(new TopicTimeOffset(tp, offset.timestamp(), offset.offset()));
+                }
             });
         }
         return result;

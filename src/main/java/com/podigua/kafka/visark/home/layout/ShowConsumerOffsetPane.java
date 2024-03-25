@@ -1,22 +1,26 @@
 package com.podigua.kafka.visark.home.layout;
 
+import atlantafx.base.controls.CustomTextField;
+import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
 import com.podigua.kafka.admin.ConsumerOffset;
 import com.podigua.kafka.admin.task.QueryConsumerOffsetTask;
+import com.podigua.kafka.core.event.LoadingEvent;
+import com.podigua.kafka.core.utils.Messages;
 import com.podigua.kafka.core.utils.NodeUtils;
-import com.podigua.kafka.visark.setting.SettingClient;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.layout.AnchorPane;
+import javafx.geometry.Orientation;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2MZ;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -35,71 +39,88 @@ public class ShowConsumerOffsetPane extends BorderPane {
      * 主题
      */
     private final String groupId;
+    /**
+     * 搜索
+     */
+    private final Button search = new Button();
 
-    /**
-     * 关闭
-     */
-    private final Button close = NodeUtils.close();
-    /**
-     * 根
-     */
-    private final AnchorPane root = new AnchorPane();
-    /**
-     * 加载中
-     */
-    private final HBox loading = new HBox(NodeUtils.progress(), new Label(SettingClient.bundle().getString("form.loading")));
+    private final CustomTextField filter = new CustomTextField("");
     /**
      * 表视图
      */
     private final TableView<ConsumerOffset> tableView = new TableView<>();
 
+    private final FontIcon searchIcon = new FontIcon(Material2MZ.SEARCH);
+
+    private final ObservableList<ConsumerOffset> rows = FXCollections.observableArrayList();
+
+    /**
+     * 过滤 器
+     */
+    private FilteredList<ConsumerOffset> filters = new FilteredList<>(rows);
+
     public ShowConsumerOffsetPane(String clusterId, String groupId) {
         this.clusterId = clusterId;
         this.groupId = groupId;
+        this.tableView.setItems(filters);
+        addTop();
         addCenter();
-        addBottom();
-        this.setPrefSize(684, 414);
         reload();
     }
 
-    private void reload() {
-        this.loading.setVisible(true);
-        this.tableView.getItems().clear();
+    private void addTop() {
+        this.filter.setPromptText(Messages.filter());
+        FontIcon icon = NodeUtils.clear(() -> filter.setText(""));
+        filter.setRight(icon);
+        filter.textProperty().addListener((observable, oldValue, newValue) -> {
+            filters.predicateProperty().set(node -> {
+                if (node == null || !StringUtils.hasText(newValue)) {
+                    return true;
+                }
+                return node.topic().toLowerCase().contains(newValue.toLowerCase());
+            });
+        });
+        this.filter.setPrefWidth(220);
+        ToolBar toolBar = new ToolBar();
+        search.setGraphic(searchIcon);
+        search.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
+        search.setOnAction(event -> reload());
+        toolBar.getItems().addAll(filter, new Separator(Orientation.VERTICAL), search);
+        this.setTop(toolBar);
+    }
+
+    public void reload() {
+        LoadingEvent.LOADING.publish();
+        this.rows.clear();
         QueryConsumerOffsetTask task = new QueryConsumerOffsetTask(clusterId, groupId);
         task.setOnSucceeded(event -> {
-            this.loading.setVisible(false);
             try {
+                LoadingEvent.STOP.publish();
                 List<ConsumerOffset> offsets = task.get();
-                tableView.getItems().addAll(offsets);
+                this.rows.addAll(offsets);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-        task.setOnFailed(event -> this.loading.setVisible(false));
+        task.setOnCancelled(event -> {
+            Platform.runLater(() -> {
+                throw new RuntimeException(event.getSource().getException());
+            });
+        });
         new Thread(task).start();
     }
 
     private void addCenter() {
-        VBox box = new VBox();
         setTableColumn();
-        box.getChildren().add(tableView);
-        NodeUtils.setAnchor(box, 0);
-        loading.setSpacing(10);
-        loading.setAlignment(Pos.CENTER);
-        NodeUtils.setAnchor(loading, 0);
-        root.getChildren().addAll(box, loading);
-        this.setCenter(root);
+        this.setCenter(tableView);
     }
 
     private void setTableColumn() {
         TableColumn<ConsumerOffset, String> topic = new TableColumn<>("Topic");
         topic.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().topic()));
-        topic.setResizable(false);
-        topic.setSortable(false);
 
         TableColumn<ConsumerOffset, String> partition = new TableColumn<>("Partition");
         partition.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().partition() + ""));
-        partition.setPrefWidth(80);
 
         TableColumn<ConsumerOffset, String> start = new TableColumn<>("Start");
         start.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().start() + ""));
@@ -111,35 +132,20 @@ public class ShowConsumerOffsetPane extends BorderPane {
         offset.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().offset() + ""));
 
         TableColumn<ConsumerOffset, String> tag = new TableColumn<>("Tag");
-        tag.setCellValueFactory(param -> new SimpleStringProperty((param.getValue().end()-param.getValue().offset())+ ""));
+        tag.setCellValueFactory(param -> new SimpleStringProperty((param.getValue().end() - param.getValue().offset()) + ""));
 
-        topic.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6).multiply(2));
-        start.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6));
-        end.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6));
-        offset.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6));
-        tag.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).divide(6).subtract(10));
+        TableColumn<ConsumerOffset, String> host = new TableColumn<>("Host");
+        host.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().host()));
 
-        tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-        tableView.getColumns().addAll(topic,partition, start, end,offset,tag);
-    }
+        TableColumn<ConsumerOffset, String> memberId = new TableColumn<>("MemberId");
+        memberId.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().memberId()));
 
+        TableColumn<ConsumerOffset, String> clientId = new TableColumn<>("ClientId");
+        clientId.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().clientId()));
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_SUBSEQUENT_COLUMNS);
 
-    private void addBottom() {
-        HBox box = new HBox();
-        box.setAlignment(Pos.CENTER_RIGHT);
-        box.setSpacing(10);
-        Button refresh = NodeUtils.refresh();
-        refresh.setOnAction(event -> reload());
-        box.getChildren().addAll(close, refresh);
-        this.setBottom(box);
-    }
+        tableView.getColumns().addAll(topic, partition, start, end, offset, tag, host, memberId, clientId);
+        tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
 
-    /**
-     * 设置为关闭
-     *
-     * @param value 价值
-     */
-    public void setOnClose(EventHandler<ActionEvent> value) {
-        close.setOnAction(value);
     }
 }

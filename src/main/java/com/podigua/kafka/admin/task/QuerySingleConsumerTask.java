@@ -1,7 +1,6 @@
 package com.podigua.kafka.admin.task;
 
 import com.podigua.kafka.admin.AdminManger;
-import com.podigua.kafka.admin.ConsumerDetail;
 import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.core.utils.Lists;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;

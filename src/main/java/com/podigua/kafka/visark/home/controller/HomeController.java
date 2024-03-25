@@ -4,13 +4,16 @@ import atlantafx.base.controls.CustomTextField;
 import atlantafx.base.controls.Notification;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.State;
-import com.podigua.kafka.admin.*;
+import com.podigua.kafka.admin.AdminManger;
+import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.admin.task.QueryConsumersTask;
 import com.podigua.kafka.admin.task.QueryNodesTask;
 import com.podigua.kafka.admin.task.QueryTopicsTask;
+import com.podigua.kafka.core.event.LoadingEvent;
 import com.podigua.kafka.core.event.NoticeCloseEvent;
 import com.podigua.kafka.core.event.NoticeEvent;
 import com.podigua.kafka.core.utils.AlertUtils;
+import com.podigua.kafka.core.utils.NodeUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
@@ -21,11 +24,16 @@ import com.podigua.kafka.visark.home.control.ClusterNodeChangeListener;
 import com.podigua.kafka.visark.home.control.ClusterNodeTreeCell;
 import com.podigua.kafka.visark.home.control.FilterableTreeItem;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
+import com.podigua.kafka.visark.home.enums.NodeType;
+import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
+import com.podigua.kafka.visark.home.layout.MessageConsumerPane;
+import com.podigua.kafka.visark.home.layout.TopicMessagePane;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -34,7 +42,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -45,6 +55,8 @@ import org.springframework.util.StringUtils;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutionException;
 
@@ -66,12 +78,22 @@ public class HomeController implements Initializable {
 
     private final Timeline timeline = new Timeline();
     public AnchorPane rootPane;
+    /**
+     * 进展
+     */
+    private final ProgressIndicator progress = NodeUtils.progress();
+    /**
+     * 右
+     */
+    private final FontIcon right = new FontIcon(Material2OutlinedAL.CHECK_CIRCLE);
+
+    public HBox state;
     private FilterableTreeItem<ClusterNode> root;
 
     public HomeController() {
         EventBus.getInstance().subscribe(ClusterConnectEvent.class, event -> {
             ClusterProperty property = event.property();
-            FilterableTreeItem<ClusterNode> cluster = new FilterableTreeItem<>(ClusterNode.cluster(property.getId(),property.getName(), property.getId()));
+            FilterableTreeItem<ClusterNode> cluster = new FilterableTreeItem<>(ClusterNode.cluster(property.getId(), property.getName(), property.getId()));
             this.root.getSourceChildren().add(cluster);
             FilterableTreeItem<ClusterNode> nodes = new FilterableTreeItem<>(ClusterNode.nodes(property.getId()));
             cluster.getSourceChildren().add(nodes);
@@ -105,6 +127,17 @@ public class HomeController implements Initializable {
             Notification notification = event.notification();
             rootPane.getChildren().remove(notification);
         });
+        EventBus.getInstance().subscribe(LoadingEvent.class, event -> {
+            state.getChildren().clear();
+            if (event.loading()) {
+                state.getChildren().add(progress);
+            } else {
+                state.getChildren().add(right);
+            }
+        });
+        EventBus.getInstance().subscribe(ClusterPublishEvent.class, event -> {
+            addTab(event.node());
+        });
     }
 
     private void query(FilterableTreeItem<ClusterNode> parent, QueryTask<List<ClusterNode>> task) {
@@ -130,6 +163,7 @@ public class HomeController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        right.getStyleClass().add(Styles.SUCCESS);
         filter.textProperty().addListener((observable, oldValue, newValue) -> {
             root.predicateProperty().set(node -> {
                 if (node == null || !StringUtils.hasText(newValue)) {
@@ -165,6 +199,46 @@ public class HomeController implements Initializable {
         treeView.setContextMenu(new ContextMenu());
         treeView.getSelectionModel().selectedItemProperty().addListener(new ClusterNodeChangeListener(treeView));
         openDialog();
+        treeView.setOnMouseClicked(event -> {
+            if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
+                Optional.ofNullable(treeView.getSelectionModel()).ifPresent(model -> {
+                    Optional.ofNullable(model.getSelectedItem()).ifPresent(item -> {
+                        addTab(item.getValue());
+                    });
+                });
+            }
+        });
+    }
+
+    private void addTab(ClusterNode value) {
+        ObservableList<Tab> tabs = this.tabPane.getTabs();
+        for (Tab tab : tabs) {
+            if (Objects.equals(value.id(), tab.getId())) {
+                this.tabPane.getSelectionModel().select(tab);
+                return;
+            }
+        }
+        boolean contains = tabs.stream().map(Tab::getId).toList().contains(value.id());
+        if (contains) {
+            return;
+        }
+        if (!NodeType.topic.equals(value.type()) && !NodeType.consumer.equals(value.type())) {
+            return;
+        }
+        Tab tab = new Tab(value.label());
+        tab.setId(value.id());
+        if (value.type().equals(NodeType.topic)) {
+            TopicMessagePane pane = new TopicMessagePane(value);
+            tab.setContent(pane);
+        } else {
+            if (value.type().equals(NodeType.consumer)) {
+                MessageConsumerPane pane = new MessageConsumerPane(value);
+                tab.setContent(pane);
+            }
+        }
+        this.tabPane.getTabs().add(tab);
+        this.tabPane.getSelectionModel().select(this.tabPane.getTabs().size()-1);
+
     }
 
     private void openDialog() {
