@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
  * @date 2024/03/25
  */
 public class SearchMessageTask extends QueryTask<Long> {
+    private final Logger logger = Logger.getLogger(SearchMessageTask.class.getName());
     private final AtomicLong counts = new AtomicLong(0);
 
     /**
@@ -51,6 +53,8 @@ public class SearchMessageTask extends QueryTask<Long> {
 
     @Override
     protected Long call() throws Exception {
+        long start = System.currentTimeMillis();
+        logger.info("总任务查询开始:" + topic);
         List<TopicOffset> list = AdminManger.getTopicOffsets(clusterId(), topic);
         if (CollectionUtils.isEmpty(list)) {
             return 0L;
@@ -70,16 +74,18 @@ public class SearchMessageTask extends QueryTask<Long> {
         if (params.partition() != -1) {
             timeOffset = timeOffset.stream().filter(e -> e.partition() == params.partition()).collect(Collectors.toList());
         }
-        long start = System.currentTimeMillis();
+        List<Offset> offsets = compOffset(list, timeOffset);
+        if (CollectionUtils.isEmpty(offsets)) {
+            return 0L;
+        }
+
         long lastSendTime = System.currentTimeMillis();
         List<ConsumerRecord<byte[], byte[]>> result = new ArrayList<>();
         try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
-            List<Offset> offsets = compOffset(list, timeOffset);
-            if (CollectionUtils.isEmpty(offsets)) {
-                return 0L;
-            }
             consumer.assign(offsets.stream().map(Offset::topicPartition).collect(Collectors.toList()));
             for (Offset offset : offsets) {
+                long childStart = System.currentTimeMillis();
+                logger.info("子任务开始查询,topic:" + offset.topicPartition.topic() + ",partition:" + offset.topicPartition.partition() + ",start:" + offset.start() + ",end:" + offset.end());
                 consumer.seek(offset.topicPartition, offset.start);
                 exit:
                 while (true) {
@@ -88,7 +94,7 @@ public class SearchMessageTask extends QueryTask<Long> {
                         counts.getAndIncrement();
                         result.add(record);
                         callback.accept(record);
-                        if (System.currentTimeMillis() - lastSendTime > 5000) {
+                        if (System.currentTimeMillis() - lastSendTime > 3000) {
                             lastSendTime = System.currentTimeMillis();
                             TooltipEvent.info(String.format(SettingClient.bundle().getString("message.search.tooltip"), counts.get(), (System.currentTimeMillis() - start))).publishAsync();
                         }
@@ -97,8 +103,10 @@ public class SearchMessageTask extends QueryTask<Long> {
                         }
                     }
                 }
+                logger.info("子任务查询结束,topic:" + offset.topicPartition.topic() + ",partition:" + offset.topicPartition.partition() + ",耗时:" + (System.currentTimeMillis() - childStart));
             }
         }
+        logger.info("总任务查询完成,topic:" + topic + ",总数:" + counts.get() + ",耗时:" + (System.currentTimeMillis() - start));
         return counts.get();
     }
 
@@ -157,7 +165,6 @@ public class SearchMessageTask extends QueryTask<Long> {
                         result.add(new Offset(topicOffset.topicPartition(), start, params.offset() - 1));
                     }
                 }
-
             } else {
                 if (params.offset() >= topicOffset.start() && params.offset() <= topicOffset.end()) {
                     long end = Math.min(topicOffset.end(), params.offset() + params.count());

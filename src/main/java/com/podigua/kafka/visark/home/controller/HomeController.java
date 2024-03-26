@@ -94,7 +94,7 @@ public class HomeController implements Initializable {
     public HBox homeBox;
     private FilterableTreeItem<ClusterNode> root;
 
-    private final Timeline tooltipTimer = new Timeline(new KeyFrame(Duration.seconds(5)));
+    private final Timeline tooltipTimer = new Timeline(new KeyFrame(Duration.seconds(3)));
 
     public HomeController() {
         EventBus.getInstance().subscribe(ClusterConnectEvent.class, event -> {

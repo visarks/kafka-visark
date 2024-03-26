@@ -18,6 +18,8 @@ import com.podigua.kafka.visark.home.entity.Message;
 import com.podigua.kafka.visark.home.entity.TotalDetails;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
@@ -110,7 +112,7 @@ public class TopicMessagePane extends BorderPane {
     /**
      * 计数
      */
-    private final Spinner<Integer> counts = new Spinner<>(1, 50000, 500, 500);
+    private final Spinner<Integer> counts = new Spinner<>(1, 20000, 500, 500);
 
     private final HBox dynamic = new HBox();
 
@@ -147,6 +149,7 @@ public class TopicMessagePane extends BorderPane {
 
     private void addBottom() {
         HBox box = new HBox();
+        box.setVisible(true);
         box.setSpacing(10);
         box.setPadding(new Insets(10));
         box.setAlignment(Pos.CENTER_RIGHT);
@@ -156,6 +159,11 @@ public class TopicMessagePane extends BorderPane {
         count.setMinWidth(30);
         this.total.addListener((observable, oldValue, newValue) -> {
             count.setText(newValue + "");
+            if (newValue.longValue() == 0L) {
+                box.setVisible(false);
+            } else {
+                box.setVisible(true);
+            }
         });
         box.getChildren().addAll(label, count);
         this.setBottom(box);
@@ -193,6 +201,7 @@ public class TopicMessagePane extends BorderPane {
         });
         ThreadUtils.start(task);
         partitions.getItems().clear();
+        partitions.setValue(null);
         QueryPartitionTask partitionTask = new QueryPartitionTask(node.clusterId(), node.label());
         partitionTask.setOnSucceeded(e -> {
             try {
@@ -204,6 +213,7 @@ public class TopicMessagePane extends BorderPane {
                 selects.addAll(list.stream().map(p -> new PartitionSelect(p.partition(), p.partition() + "")).toList());
                 partitions.setValue(all);
                 partitions.getItems().addAll(selects);
+                System.out.println("完成....");
                 this.running.set(this.running.get() + 1);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -227,6 +237,16 @@ public class TopicMessagePane extends BorderPane {
                 return node.value().get().toLowerCase().contains(newValue.toLowerCase());
             });
         });
+        TableColumn<Message, String> priority = new TableColumn<>("#");
+        priority.setCellFactory(col -> {
+            var cell = new TableCell<Message, String>();
+            StringBinding value = Bindings.when(cell.emptyProperty()).then("").otherwise(cell.indexProperty().add(1).asString());
+            cell.textProperty().bind(value);
+            return cell;
+        });
+        priority.setPrefWidth(60);
+        priority.setSortable(false);
+
         TableColumn<Message, Number> partition = new TableColumn<>("Partition");
         partition.setCellValueFactory(param -> param.getValue().partition());
         partition.setPrefWidth(200);
@@ -253,8 +273,8 @@ public class TopicMessagePane extends BorderPane {
         timestamp.setCellValueFactory(param -> param.getValue().timestamp());
         timestamp.setPrefWidth(220);
 
-        value.prefWidthProperty().bind(table.widthProperty().subtract(key.widthProperty()).subtract(timestamp.widthProperty()).subtract(offset.widthProperty()).subtract(partition.widthProperty()).subtract(10));
-        table.getColumns().addAll(partition, offset, key, value, timestamp);
+        value.prefWidthProperty().bind(table.widthProperty().subtract(priority.prefWidthProperty()).subtract(key.widthProperty()).subtract(timestamp.widthProperty()).subtract(offset.widthProperty()).subtract(partition.widthProperty()).subtract(10));
+        table.getColumns().addAll(priority, partition, offset, key, value, timestamp);
         table.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
         TableUtils.sortPolicyProperty(this.table, filters, Message::sort);
         this.setCenter(table);
@@ -281,18 +301,17 @@ public class TopicMessagePane extends BorderPane {
 
     private void onSearch() {
         searching.addListener((observable, oldValue, newValue) -> {
-            search.getStyleClass().remove(Styles.DANGER);
-            search.getStyleClass().remove(Styles.ACCENT);
             if (newValue) {
-                search.setGraphic(new FontIcon(Material2MZ.STOP));
-                search.getStyleClass().add(Styles.DANGER);
                 search.setDisable(true);
+                filter.setDisable(true);
+                start.setDisable(true);
+                clear.setDisable(true);
             } else {
+                start.setDisable(false);
+                filter.setDisable(false);
                 search.setDisable(false);
-                search.getStyleClass().add(Styles.ACCENT);
-                this.search.setGraphic(searchIcon);
+                clear.setDisable(false);
             }
-
         });
         search.setOnAction(event -> {
             this.rows.clear();
@@ -313,22 +332,17 @@ public class TopicMessagePane extends BorderPane {
             this.searching.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             SearchType searchType = (SearchType) typeGroup.getSelectedToggle().getUserData();
-            var total = new AtomicLong(0);
+            var messageCounts = new AtomicLong(0);
             searchTask = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType).partition(partitions.getValue().partition).time(picker.getDateTimeValue()).offset(new BigDecimal(offset.getValue()).longValue()).count(counts.getValue()), record -> {
                 var message = new Message(record);
                 this.rows.add(0, message);
-                total.getAndIncrement();
-                if (total.get() % 5000 == 0) {
-                    Platform.runLater(() -> {
-                        this.total.set(total.get());
-                    });
-                }
+                messageCounts.getAndIncrement();
             });
             long start = System.currentTimeMillis();
             searchTask.setOnSucceeded(e -> {
-                this.total.set(total.get());
+                this.total.set(messageCounts.get());
                 this.searching.set(false);
-                MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), total.get(), System.currentTimeMillis() - start));
+                MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), messageCounts.get(), System.currentTimeMillis() - start));
             });
             searchTask.setOnFailed(e -> {
                 this.searching.set(false);
@@ -388,7 +402,9 @@ public class TopicMessagePane extends BorderPane {
         });
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
+        //todo
+//        tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
+        tool.getItems().addAll(search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
         header.getChildren().addAll(filters, tool);
         this.setTop(header);
     }
