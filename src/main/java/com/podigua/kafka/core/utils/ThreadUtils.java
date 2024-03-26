@@ -2,6 +2,9 @@ package com.podigua.kafka.core.utils;
 
 import javafx.concurrent.Task;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * 线程实用程序
  *
@@ -9,6 +12,8 @@ import javafx.concurrent.Task;
  * @date 2024/03/24
  */
 public class ThreadUtils {
+    private final static ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+
     /**
      * 开始
      *
@@ -17,4 +22,14 @@ public class ThreadUtils {
     public static <T> void start(Task<T> task) {
         new Thread(task).start();
     }
+
+    /**
+     * 虚拟
+     *
+     * @return {@link ExecutorService}
+     */
+    public static ExecutorService virtual() {
+        return service;
+    }
+
 }

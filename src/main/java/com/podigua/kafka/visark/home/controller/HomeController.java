@@ -17,6 +17,7 @@ import com.podigua.kafka.core.utils.NodeUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
+import com.podigua.kafka.event.TooltipEvent;
 import com.podigua.kafka.visark.cluster.controller.ClusterController;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.cluster.event.ClusterConnectEvent;
@@ -32,6 +33,7 @@ import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -88,7 +90,11 @@ public class HomeController implements Initializable {
     private final FontIcon right = new FontIcon(Material2OutlinedAL.CHECK_CIRCLE);
 
     public HBox state;
+    public HBox tooltipBox;
+    public HBox homeBox;
     private FilterableTreeItem<ClusterNode> root;
+
+    private final Timeline tooltipTimer = new Timeline(new KeyFrame(Duration.seconds(5)));
 
     public HomeController() {
         EventBus.getInstance().subscribe(ClusterConnectEvent.class, event -> {
@@ -138,6 +144,15 @@ public class HomeController implements Initializable {
         EventBus.getInstance().subscribe(ClusterPublishEvent.class, event -> {
             addTab(event.node());
         });
+        EventBus.getInstance().subscribe(TooltipEvent.class, event -> {
+            Platform.runLater(() -> {
+                tooltipTimer.stop();
+                tooltipTimer.play();
+                tooltipBox.getChildren().clear();
+                Label label = new Label(event.tooltip());
+                tooltipBox.getChildren().add(label);
+            });
+        });
     }
 
     private void query(FilterableTreeItem<ClusterNode> parent, QueryTask<List<ClusterNode>> task) {
@@ -163,6 +178,10 @@ public class HomeController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        homeBox.prefWidthProperty().bind(leftPane.widthProperty());
+        tooltipTimer.setOnFinished(event -> {
+            tooltipBox.getChildren().clear();
+        });
         right.getStyleClass().add(Styles.SUCCESS);
         filter.textProperty().addListener((observable, oldValue, newValue) -> {
             root.predicateProperty().set(node -> {
@@ -237,7 +256,7 @@ public class HomeController implements Initializable {
             }
         }
         this.tabPane.getTabs().add(tab);
-        this.tabPane.getSelectionModel().select(this.tabPane.getTabs().size()-1);
+        this.tabPane.getSelectionModel().select(this.tabPane.getTabs().size() - 1);
 
     }
 

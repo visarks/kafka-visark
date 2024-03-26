@@ -4,6 +4,8 @@ import com.podigua.kafka.admin.*;
 import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.admin.enums.SearchType;
 import com.podigua.kafka.core.utils.UUIDUtils;
+import com.podigua.kafka.event.TooltipEvent;
+import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -37,8 +39,8 @@ public class SearchMessageTask extends QueryTask<Long> {
     private final String topic;
 
     private final QueryParams params;
-
     private final Consumer<ConsumerRecord<byte[], byte[]>> callback;
+
 
     public SearchMessageTask(String clusterId, String topic, QueryParams params, Consumer<ConsumerRecord<byte[], byte[]>> callback) {
         super(clusterId);
@@ -53,8 +55,8 @@ public class SearchMessageTask extends QueryTask<Long> {
         if (CollectionUtils.isEmpty(list)) {
             return 0L;
         }
-        if(params.partition()!=-1){
-            list=list.stream().filter(e->e.partition()==params.partition()).collect(Collectors.toList());
+        if (params.partition() != -1) {
+            list = list.stream().filter(e -> e.partition() == params.partition()).collect(Collectors.toList());
         }
         Properties properties = new Admin(property()).properties();
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUIDUtils.groupId());
@@ -65,9 +67,12 @@ public class SearchMessageTask extends QueryTask<Long> {
         if (SearchType.datetime.equals(params.searchType())) {
             timeOffset = AdminManger.getTopicOffsetsByTime(clusterId(), topic, Timestamp.valueOf(params.time()).getTime());
         }
-        if(params.partition()!=-1){
-            timeOffset=timeOffset.stream().filter(e->e.partition()==params.partition()).collect(Collectors.toList());
+        if (params.partition() != -1) {
+            timeOffset = timeOffset.stream().filter(e -> e.partition() == params.partition()).collect(Collectors.toList());
         }
+        long start = System.currentTimeMillis();
+        long lastSendTime = System.currentTimeMillis();
+        List<ConsumerRecord<byte[], byte[]>> result = new ArrayList<>();
         try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
             List<Offset> offsets = compOffset(list, timeOffset);
             if (CollectionUtils.isEmpty(offsets)) {
@@ -78,10 +83,15 @@ public class SearchMessageTask extends QueryTask<Long> {
                 consumer.seek(offset.topicPartition, offset.start);
                 exit:
                 while (true) {
-                    ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(300));
+                    ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(100));
                     for (ConsumerRecord<byte[], byte[]> record : records) {
                         counts.getAndIncrement();
-                        this.callback.accept(record);
+                        result.add(record);
+                        callback.accept(record);
+                        if (System.currentTimeMillis() - lastSendTime > 5000) {
+                            lastSendTime = System.currentTimeMillis();
+                            TooltipEvent.info(String.format(SettingClient.bundle().getString("message.search.tooltip"), counts.get(), (System.currentTimeMillis() - start))).publishAsync();
+                        }
                         if (record.offset() >= offset.end) {
                             break exit;
                         }
@@ -104,7 +114,7 @@ public class SearchMessageTask extends QueryTask<Long> {
         return new ArrayList<>();
     }
 
-    private List<Offset> byTime( List<TopicOffset> topicOffsets,List<TopicTimeOffset> times) {
+    private List<Offset> byTime(List<TopicOffset> topicOffsets, List<TopicTimeOffset> times) {
         List<Offset> result = new ArrayList<>();
         if (CollectionUtils.isEmpty(times)) {
             return result;
@@ -138,7 +148,7 @@ public class SearchMessageTask extends QueryTask<Long> {
         List<Offset> result = new ArrayList<>();
         for (TopicOffset topicOffset : list) {
             if (Objects.equals(topicOffset.start(), topicOffset.end())) {
-                break;
+                continue;
             }
             if (OffsetType.earliest.equals(params.offsetType())) {
                 if (params.offset() >= topicOffset.start() && params.offset() <= topicOffset.end()) {
@@ -164,7 +174,7 @@ public class SearchMessageTask extends QueryTask<Long> {
         List<Offset> result = new ArrayList<>();
         for (TopicOffset topicOffset : list) {
             if (Objects.equals(topicOffset.start(), topicOffset.end())) {
-                break;
+                continue;
             }
             if (OffsetType.earliest.equals(params.offsetType())) {
                 long end = Math.min(topicOffset.end(), topicOffset.start() + params.count());

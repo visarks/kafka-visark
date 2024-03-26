@@ -13,6 +13,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.Label?>
 <AnchorPane fx:id="rootPane" minHeight="766.0" minWidth="1216.0" prefHeight="766.0" prefWidth="1216.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.home.controller.HomeController">
    <children>
       <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -63,7 +64,14 @@
          </center>
          <bottom>
             <HBox alignment="CENTER_RIGHT" prefHeight="24">
-               <HBox fx:id="state" alignment="CENTER_LEFT" />
+               <HBox fx:id="homeBox" alignment="CENTER" >
+                     <Label text="Home"/>
+               </HBox>
+               <HBox fx:id="tooltipBox" alignment="CENTER_LEFT" style="-fx-padding: 0 0 0 10">
+
+               </HBox>
+               <HBox HBox.hgrow="ALWAYS"></HBox>
+               <HBox fx:id="state" alignment="CENTER_RIGHT" />
                <padding>
                   <Insets right="20.0" />
                </padding>

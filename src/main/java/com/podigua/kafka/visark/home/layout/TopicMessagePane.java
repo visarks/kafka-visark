@@ -11,18 +11,20 @@ import com.podigua.kafka.admin.enums.SearchType;
 import com.podigua.kafka.admin.task.QueryPartitionTask;
 import com.podigua.kafka.admin.task.QueryTopicOffsetTask;
 import com.podigua.kafka.admin.task.SearchMessageTask;
-import com.podigua.kafka.core.event.LoadingEvent;
 import com.podigua.kafka.core.utils.*;
 import com.podigua.kafka.visark.home.control.DateTimePicker;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.entity.Message;
+import com.podigua.kafka.visark.home.entity.TotalDetails;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -33,9 +35,10 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 import static javafx.geometry.Orientation.VERTICAL;
 
@@ -46,6 +49,7 @@ import static javafx.geometry.Orientation.VERTICAL;
  * @date 2024/03/24
  */
 public class TopicMessagePane extends BorderPane {
+    private final static Logger logger = Logger.getLogger(TopicMessagePane.class.getName());
     /**
      * 节点
      */
@@ -55,7 +59,15 @@ public class TopicMessagePane extends BorderPane {
      */
     private final ProgressIndicator progress = NodeUtils.progress();
     private final ProgressIndicator searchProgress = NodeUtils.progress();
+
+    private final SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
     private final FontIcon searchIcon = new FontIcon(Material2MZ.SEARCH);
+
+    /**
+     * 运行中
+     * 2 代表可以执行
+     */
+    private final SimpleIntegerProperty running = new SimpleIntegerProperty(0);
 
     /**
      * 分区
@@ -72,6 +84,11 @@ public class TopicMessagePane extends BorderPane {
     private final Button add = new Button();
 
     private final CustomTextField filter = new CustomTextField();
+
+    /**
+     * 总
+     */
+    private final SimpleLongProperty total = new SimpleLongProperty(0);
     /**
      * 刷新
      */
@@ -88,10 +105,12 @@ public class TopicMessagePane extends BorderPane {
      */
     private final ToggleGroup typeGroup = new ToggleGroup();
 
+    private final TotalDetails totalDetails = new TotalDetails();
+
     /**
      * 计数
      */
-    private final Spinner<Integer> counts = new Spinner<>(1, 10000, 500, 500);
+    private final Spinner<Integer> counts = new Spinner<>(1, 50000, 500, 500);
 
     private final HBox dynamic = new HBox();
 
@@ -109,6 +128,7 @@ public class TopicMessagePane extends BorderPane {
 
     private FilteredList<Message> filters = new FilteredList<>(rows);
 
+    private SearchMessageTask searchTask;
 
     public TopicMessagePane(ClusterNode node) {
         this.node = node;
@@ -116,23 +136,57 @@ public class TopicMessagePane extends BorderPane {
         addTools();
         addAction();
         setTable();
+        addBottom();
         startTask();
+        setMessages();
         picker.setDateTimeValue(LocalDateTime.now());
     }
 
+    private void setMessages() {
+    }
+
+    private void addBottom() {
+        HBox box = new HBox();
+        box.setSpacing(10);
+        box.setPadding(new Insets(10));
+        box.setAlignment(Pos.CENTER_RIGHT);
+        Label label = new Label(SettingClient.bundle().getString("message.total.count"));
+        Label count = new Label("0");
+        count.setStyle(Styles.SUCCESS);
+        count.setMinWidth(30);
+        this.total.addListener((observable, oldValue, newValue) -> {
+            count.setText(newValue + "");
+        });
+        box.getChildren().addAll(label, count);
+        this.setBottom(box);
+    }
+
     private void startTask() {
+        this.running.set(0);
+        this.totalDetails.clear();
         QueryTopicOffsetTask task = new QueryTopicOffsetTask(node.clusterId(), node.label());
         task.setOnSucceeded(event -> {
             try {
                 int min = Integer.MAX_VALUE;
                 int max = -1;
                 List<TopicOffset> offsets = task.get();
+                long startOffset = Long.MAX_VALUE;
+                long endOffset = 0;
+                long total = 0L;
                 for (TopicOffset topicOffset : offsets) {
+                    startOffset = Math.min(startOffset, topicOffset.start());
+                    endOffset = Math.max(endOffset, topicOffset.end());
+                    total += (topicOffset.end() - topicOffset.start());
                     min = Math.min(min, topicOffset.start().intValue());
                     max = Math.max(max, topicOffset.end().intValue());
                 }
+
+                this.totalDetails.offStart().set(startOffset);
+                this.totalDetails.offEnd().set(endOffset);
+                this.totalDetails.messages().set(total);
                 offset = new Spinner<>(min, max, max, 100);
                 offset.setEditable(true);
+                this.running.set(this.running.get() + 1);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -143,14 +197,14 @@ public class TopicMessagePane extends BorderPane {
         partitionTask.setOnSucceeded(e -> {
             try {
                 List<Partition> list = partitionTask.get();
+                this.totalDetails.partitions().set(list.size());
                 List<PartitionSelect> selects = new ArrayList<>();
                 PartitionSelect all = new PartitionSelect(-1, SettingClient.bundle().getString("message.partitions.all"));
                 selects.add(all);
-                selects.addAll(list.stream().map(p ->
-                        new PartitionSelect(p.partition(), p.partition() + "")
-                ).toList());
+                selects.addAll(list.stream().map(p -> new PartitionSelect(p.partition(), p.partition() + "")).toList());
                 partitions.setValue(all);
                 partitions.getItems().addAll(selects);
+                this.running.set(this.running.get() + 1);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -170,37 +224,42 @@ public class TopicMessagePane extends BorderPane {
                 if (node == null || !StringUtils.hasText(newValue)) {
                     return true;
                 }
-                return node.value().toLowerCase().contains(newValue.toLowerCase());
+                return node.value().get().toLowerCase().contains(newValue.toLowerCase());
             });
         });
-        {
-            TableColumn<Message, Number> partition = new TableColumn<>("Partition");
-            partition.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().partition()));
-            partition.setPrefWidth(200);
+        TableColumn<Message, Number> partition = new TableColumn<>("Partition");
+        partition.setCellValueFactory(param -> param.getValue().partition());
+        partition.setPrefWidth(200);
+        partition.setSortable(false);
 
-            TableColumn<Message, Number> offset = new TableColumn<>("Offset");
-            offset.setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().offset()));
-            offset.setPrefWidth(200);
+        TableColumn<Message, Number> offset = new TableColumn<>("Offset");
+        offset.setCellValueFactory(param -> param.getValue().offset());
+        offset.setPrefWidth(200);
+        offset.setSortable(false);
 
-            TableColumn<Message, String> key = new TableColumn<>("Key");
-            key.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().key()));
-            key.setPrefWidth(220);
+        TableColumn<Message, String> key = new TableColumn<>("Key");
+        key.setCellValueFactory(param -> param.getValue().key());
+        key.setPrefWidth(220);
+        key.setSortable(false);
 
 
-            TableColumn<Message, String> value = new TableColumn<>("Value");
-            value.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().value()));
+        TableColumn<Message, String> value = new TableColumn<>("Value");
+        value.setCellValueFactory(param -> param.getValue().value());
+        value.setSortable(false);
+        value.setSortable(false);
 
-            TableColumn<Message, String> timestamp = new TableColumn<>("Timestamp");
-            timestamp.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().timestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
-            timestamp.setPrefWidth(220);
 
-            value.prefWidthProperty().bind(table.widthProperty().subtract(key.widthProperty()).subtract(timestamp.widthProperty()).subtract(offset.widthProperty()).subtract(partition.widthProperty()).subtract(10));
+        TableColumn<Message, String> timestamp = new TableColumn<>("Timestamp");
+        timestamp.setCellValueFactory(param -> param.getValue().timestamp());
+        timestamp.setPrefWidth(220);
 
-            table.getColumns().addAll(partition, offset, key, value, timestamp);
-            table.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
-            this.setCenter(table);
-        }
+        value.prefWidthProperty().bind(table.widthProperty().subtract(key.widthProperty()).subtract(timestamp.widthProperty()).subtract(offset.widthProperty()).subtract(partition.widthProperty()).subtract(10));
+        table.getColumns().addAll(partition, offset, key, value, timestamp);
+        table.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
+        TableUtils.sortPolicyProperty(this.table, filters, Message::sort);
+        this.setCenter(table);
     }
+
 
     private void addAction() {
         onSearch();
@@ -211,54 +270,73 @@ public class TopicMessagePane extends BorderPane {
         this.clear.setOnAction(event -> {
             AlertUtils.confirm(SettingClient.bundle().getString("message.sure.clear")).ifPresent(t -> {
                 this.rows.clear();
+                this.filters.clear();
             });
         });
     }
 
-    private void changeSearchStatus(boolean loading) {
-        if (loading) {
-            this.search.setGraphic(searchProgress);
-            this.search.setDisable(true);
-            LoadingEvent.LOADING.publish();
-        } else {
-            this.search.setGraphic(searchIcon);
-            this.search.setDisable(false);
-            LoadingEvent.STOP.publish();
-        }
+    private boolean isRefreshConfig() {
+        return this.running.get() != 2;
     }
 
     private void onSearch() {
-        search.setOnAction(event -> {
-            if (!this.rows.isEmpty()) {
-                this.rows.clear();
+        searching.addListener((observable, oldValue, newValue) -> {
+            search.getStyleClass().remove(Styles.DANGER);
+            search.getStyleClass().remove(Styles.ACCENT);
+            if (newValue) {
+                search.setGraphic(new FontIcon(Material2MZ.STOP));
+                search.getStyleClass().add(Styles.DANGER);
+                search.setDisable(true);
+            } else {
+                search.setDisable(false);
+                search.getStyleClass().add(Styles.ACCENT);
+                this.search.setGraphic(searchIcon);
             }
-            changeSearchStatus(true);
+
+        });
+        search.setOnAction(event -> {
+            this.rows.clear();
+            this.filters.clear();
+            if (isRefreshConfig()) {
+                MessageUtils.warning(SettingClient.bundle().getString("message.config.initial"));
+                return;
+            }
+            if (searching.get()) {
+                if (searchTask != null && searchTask.isRunning()) {
+                    searchTask.cancel();
+                    this.searching.set(false);
+                    MessageUtils.success(SettingClient.bundle().getString("message.search.cancel"));
+                    return;
+                }
+            }
+            this.total.set(0);
+            this.searching.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             SearchType searchType = (SearchType) typeGroup.getSelectedToggle().getUserData();
-            SearchMessageTask task = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType)
-                    .partition(partitions.getValue().partition)
-                    .time(picker.getDateTimeValue())
-                    .offset(new BigDecimal(offset.getValue()).longValue())
-                    .count(counts.getValue()),
-                    record -> {
-                        Message message = new Message(record);
-                        this.rows.add(0, message);
+            var total = new AtomicLong(0);
+            searchTask = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType).partition(partitions.getValue().partition).time(picker.getDateTimeValue()).offset(new BigDecimal(offset.getValue()).longValue()).count(counts.getValue()), record -> {
+                var message = new Message(record);
+                this.rows.add(0, message);
+                total.getAndIncrement();
+                if (total.get() % 5000 == 0) {
+                    Platform.runLater(() -> {
+                        this.total.set(total.get());
                     });
-            task.setOnSucceeded(e -> {
-                changeSearchStatus(false);
-                try {
-                    MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), task.get()));
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
                 }
             });
-            task.setOnFailed(e -> {
-                changeSearchStatus(false);
+            long start = System.currentTimeMillis();
+            searchTask.setOnSucceeded(e -> {
+                this.total.set(total.get());
+                this.searching.set(false);
+                MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), total.get(), System.currentTimeMillis() - start));
+            });
+            searchTask.setOnFailed(e -> {
+                this.searching.set(false);
                 Platform.runLater(() -> {
                     throw new RuntimeException(e.getSource().getException());
                 });
             });
-            ThreadUtils.start(task);
+            ThreadUtils.start(searchTask);
         });
     }
 
@@ -266,8 +344,7 @@ public class TopicMessagePane extends BorderPane {
         VBox header = new VBox();
         header.setAlignment(Pos.CENTER_LEFT);
         header.setSpacing(5);
-        ToolBar filters = new ToolBar();
-        filters.getItems().addAll(filter, new Separator(VERTICAL), refresh);
+        ToolBar filters = setFilterToolBar();
         dynamic.setAlignment(Pos.CENTER_LEFT);
         ToolBar tool = new ToolBar();
         setStarted();
@@ -314,6 +391,41 @@ public class TopicMessagePane extends BorderPane {
         tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
         header.getChildren().addAll(filters, tool);
         this.setTop(header);
+    }
+
+    private ToolBar setFilterToolBar() {
+        ToolBar filters = new ToolBar();
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox details = new HBox();
+        details.setPadding(new Insets(0, 20, 0, 0));
+        details.setSpacing(15);
+        details.setAlignment(Pos.CENTER_RIGHT);
+        Label partition = new Label("0");
+        partition.getStyleClass().add(Styles.SUCCESS);
+        this.totalDetails.partitions().addListener((observableValue, oldValue, newValue) -> {
+            partition.setText(newValue.longValue() + "");
+        });
+
+        Label offset = new Label("0-0");
+        offset.getStyleClass().add(Styles.SUCCESS);
+        this.totalDetails.offStart().addListener((observableValue, oldValue, newValue) -> {
+            offset.setText(newValue.longValue() + "-" + this.totalDetails.offEnd().get());
+        });
+        this.totalDetails.offEnd().addListener((observableValue, oldValue, newValue) -> {
+            offset.setText(this.totalDetails.offStart().get() + "-" + newValue.longValue());
+        });
+        Label message = new Label("0");
+        message.getStyleClass().add(Styles.SUCCESS);
+        this.totalDetails.messages().addListener((observableValue, oldValue, newValue) -> {
+            message.setText(newValue.longValue() + "");
+        });
+        details.getChildren().addAll(new Label("Partition:"), partition, new Label("Offset:"), offset, new Label("Messages:"), message);
+        this.refresh.setOnAction(event -> {
+            startTask();
+        });
+        filters.getItems().addAll(filter, new Separator(VERTICAL), refresh, spacer, details);
+        return filters;
     }
 
     private void setButton() {

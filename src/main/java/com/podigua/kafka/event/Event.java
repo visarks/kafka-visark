@@ -1,5 +1,6 @@
 package com.podigua.kafka.event;
 
+import com.podigua.kafka.core.utils.ThreadUtils;
 import com.podigua.kafka.core.utils.UUIDUtils;
 
 /**
@@ -13,6 +14,7 @@ public class Event {
      * UUID
      */
     private final String uuid = UUIDUtils.uuid();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -41,7 +43,16 @@ public class Event {
     /**
      * 发布
      */
-    public void publish(){
+    public void publish() {
         EventBus.getInstance().publish(this);
+    }
+
+    /**
+     * 发布
+     */
+    public void publishAsync() {
+        ThreadUtils.virtual().execute(() -> {
+            EventBus.getInstance().publish(this);
+        });
     }
 }

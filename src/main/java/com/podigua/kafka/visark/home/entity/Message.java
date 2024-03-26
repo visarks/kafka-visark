@@ -1,10 +1,14 @@
 package com.podigua.kafka.visark.home.entity;
 
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleStringProperty;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,12 +20,16 @@ import java.util.List;
  */
 public class Message {
     public Message(ConsumerRecord<byte[], byte[]> record) {
-        this.topic = record.topic();
-        this.partition = record.partition();
-        this.offset = record.offset();
-        this.timestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp()), ZoneId.systemDefault());
-        this.key = new String(record.key());
-        this.value = new String(record.value());
+        this.topic.set(record.topic());
+        this.partition.set(record.partition());
+        this.offset.set(record.offset());
+        this.timestamp.set(LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        if (record.key() != null) {
+            this.key.set(new String(record.key()));
+        }
+        if (record.value() != null) {
+            this.value.set(new String(record.value()));
+        }
         record.headers().forEach(header -> {
             this.headers.add(new Header(header.key(), new String(header.value())));
         });
@@ -30,60 +38,70 @@ public class Message {
     /**
      * 主题
      */
-    private String topic;
+    private final SimpleStringProperty topic = new SimpleStringProperty("");
     /**
      * 分区
      */
-    private Integer partition;
+    private final SimpleIntegerProperty partition = new SimpleIntegerProperty();
     /**
      * 抵消
      */
-    private Long offset;
+    private final SimpleLongProperty offset = new SimpleLongProperty();
     /**
      * 时间戳
      */
-    private LocalDateTime timestamp;
+    private final SimpleStringProperty timestamp = new SimpleStringProperty("");
 
     /**
      * key
      */
-    private String key;
+    private final SimpleStringProperty key = new SimpleStringProperty("");
     /**
      * value
      */
-    private String value;
+    private final SimpleStringProperty value = new SimpleStringProperty("");
 
     /**
      * 头
      */
-    private List<Header> headers = new ArrayList<>();
+    private final List<Header> headers = new ArrayList<>();
 
-    public String topic() {
+    public SimpleStringProperty topic() {
         return this.topic;
     }
 
-    public Integer partition() {
+    public SimpleIntegerProperty partition() {
         return this.partition;
     }
 
-    public Long offset() {
+    public SimpleLongProperty offset() {
         return this.offset;
     }
 
-    public LocalDateTime timestamp() {
+    public SimpleStringProperty timestamp() {
         return this.timestamp;
     }
 
-    public String key() {
+    public SimpleStringProperty key() {
         return this.key;
     }
 
-    public String value() {
+    public SimpleStringProperty value() {
         return this.value;
     }
 
     public List<Header> headers() {
         return this.headers;
+    }
+
+
+    /**
+     * 排序
+     *
+     * @return {@link String}
+     */
+    public String sort() {
+        return this.timestamp.get();
     }
 
     /**
