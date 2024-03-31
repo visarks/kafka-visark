@@ -8,6 +8,7 @@ import com.podigua.kafka.admin.QueryParams;
 import com.podigua.kafka.admin.TopicOffset;
 import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.admin.enums.SearchType;
+import com.podigua.kafka.admin.task.MessageConsumerTask;
 import com.podigua.kafka.admin.task.QueryPartitionTask;
 import com.podigua.kafka.admin.task.QueryTopicOffsetTask;
 import com.podigua.kafka.admin.task.SearchMessageTask;
@@ -63,6 +64,7 @@ public class TopicMessagePane extends BorderPane {
     private final ProgressIndicator searchProgress = NodeUtils.progress();
 
     private final SimpleBooleanProperty searching = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty starting = new SimpleBooleanProperty(false);
     private final FontIcon searchIcon = new FontIcon(Material2MZ.SEARCH);
 
     /**
@@ -128,9 +130,10 @@ public class TopicMessagePane extends BorderPane {
 
     private final ObservableList<Message> rows = FXCollections.observableArrayList();
 
-    private FilteredList<Message> filters = new FilteredList<>(rows);
+    private final FilteredList<Message> filters = new FilteredList<>(rows);
 
     private SearchMessageTask searchTask;
+    private MessageConsumerTask consumerTask;
 
     public TopicMessagePane(ClusterNode node) {
         this.node = node;
@@ -139,7 +142,7 @@ public class TopicMessagePane extends BorderPane {
         addAction();
         setTable();
         addBottom();
-        startTask();
+        refreshTask();
         setMessages();
         picker.setDateTimeValue(LocalDateTime.now());
     }
@@ -169,7 +172,7 @@ public class TopicMessagePane extends BorderPane {
         this.setBottom(box);
     }
 
-    private void startTask() {
+    private void refreshTask() {
         this.running.set(0);
         this.totalDetails.clear();
         QueryTopicOffsetTask task = new QueryTopicOffsetTask(node.clusterId(), node.label());
@@ -188,7 +191,6 @@ public class TopicMessagePane extends BorderPane {
                     min = Math.min(min, topicOffset.start().intValue());
                     max = Math.max(max, topicOffset.end().intValue());
                 }
-
                 this.totalDetails.offStart().set(startOffset);
                 this.totalDetails.offEnd().set(endOffset);
                 this.totalDetails.messages().set(total);
@@ -213,7 +215,6 @@ public class TopicMessagePane extends BorderPane {
                 selects.addAll(list.stream().map(p -> new PartitionSelect(p.partition(), p.partition() + "")).toList());
                 partitions.setValue(all);
                 partitions.getItems().addAll(selects);
-                System.out.println("完成....");
                 this.running.set(this.running.get() + 1);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -284,6 +285,65 @@ public class TopicMessagePane extends BorderPane {
     private void addAction() {
         onSearch();
         onClear();
+        onStart();
+    }
+
+    private void onStart() {
+        this.starting.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
+                fontIcon.getStyleClass().add(Styles.DANGER);
+                start.setGraphic(fontIcon);
+                filter.setDisable(true);
+                search.setDisable(true);
+                clear.setDisable(true);
+            } else {
+                start.setGraphic(new FontIcon(Material2MZ.PLAY_ARROW));
+                search.setDisable(false);
+                filter.setDisable(false);
+                clear.setDisable(false);
+            }
+        });
+        start.setOnAction(event -> {
+            if (isRefreshConfig()) {
+                MessageUtils.warning(SettingClient.bundle().getString("message.config.initial"));
+                return;
+            }
+            if (starting.get()) {
+                if (consumerTask != null && consumerTask.isRunning()) {
+                    consumerTask.shutdown();
+                    this.starting.set(false);
+                    return;
+                }
+            }
+            this.rows.clear();
+            this.total.set(0);
+            this.starting.set(true);
+            OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
+            var messageCounts = new AtomicLong(0);
+            consumerTask = new MessageConsumerTask(node.clusterId(), node.label(),offsetType.name(), record -> {
+                var message = new Message(record);
+                this.rows.add(0, message);
+                messageCounts.getAndIncrement();
+            });
+            long start = System.currentTimeMillis();
+            consumerTask.setOnSucceeded(e -> {
+                this.total.set(messageCounts.get());
+                this.starting.set(false);
+                if (consumerTask.isShutdown()) {
+                    MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.cancel"), messageCounts.get(), System.currentTimeMillis() - start));
+                } else {
+                    MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), messageCounts.get(), System.currentTimeMillis() - start));
+                }
+            });
+            consumerTask.setOnFailed(e -> {
+                this.starting.set(false);
+                Platform.runLater(() -> {
+                    throw new RuntimeException(e.getSource().getException());
+                });
+            });
+            ThreadUtils.start(consumerTask);
+        });
     }
 
     private void onClear() {
@@ -302,32 +362,32 @@ public class TopicMessagePane extends BorderPane {
     private void onSearch() {
         searching.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
-                search.setDisable(true);
+                FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
+                fontIcon.getStyleClass().add(Styles.DANGER);
+                search.setGraphic(fontIcon);
                 filter.setDisable(true);
                 start.setDisable(true);
                 clear.setDisable(true);
             } else {
+                search.setGraphic(searchIcon);
                 start.setDisable(false);
                 filter.setDisable(false);
-                search.setDisable(false);
                 clear.setDisable(false);
             }
         });
         search.setOnAction(event -> {
-            this.rows.clear();
-            this.filters.clear();
             if (isRefreshConfig()) {
                 MessageUtils.warning(SettingClient.bundle().getString("message.config.initial"));
                 return;
             }
             if (searching.get()) {
                 if (searchTask != null && searchTask.isRunning()) {
-                    searchTask.cancel();
+                    searchTask.shutdown();
                     this.searching.set(false);
-                    MessageUtils.success(SettingClient.bundle().getString("message.search.cancel"));
                     return;
                 }
             }
+            this.rows.clear();
             this.total.set(0);
             this.searching.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
@@ -342,7 +402,11 @@ public class TopicMessagePane extends BorderPane {
             searchTask.setOnSucceeded(e -> {
                 this.total.set(messageCounts.get());
                 this.searching.set(false);
-                MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), messageCounts.get(), System.currentTimeMillis() - start));
+                if (searchTask.isShutdown()) {
+                    MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.cancel"), messageCounts.get(), System.currentTimeMillis() - start));
+                } else {
+                    MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.success"), messageCounts.get(), System.currentTimeMillis() - start));
+                }
             });
             searchTask.setOnFailed(e -> {
                 this.searching.set(false);
@@ -402,9 +466,7 @@ public class TopicMessagePane extends BorderPane {
         });
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        //todo
-//        tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
-        tool.getItems().addAll(search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
+        tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
         header.getChildren().addAll(filters, tool);
         this.setTop(header);
     }
@@ -438,7 +500,7 @@ public class TopicMessagePane extends BorderPane {
         });
         details.getChildren().addAll(new Label("Partition:"), partition, new Label("Offset:"), offset, new Label("Messages:"), message);
         this.refresh.setOnAction(event -> {
-            startTask();
+            refreshTask();
         });
         filters.getItems().addAll(filter, new Separator(VERTICAL), refresh, spacer, details);
         return filters;

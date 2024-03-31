@@ -36,12 +36,10 @@ public class FilterableTreeItem<T> extends TreeItem<T> {
             };
             return p;
         }, this.predicate));
-
         filteredChildren.addListener((ListChangeListener<TreeItem<T>>) c -> {
             while (c.next()) {
                 getChildren().removeAll(c.getRemoved());
                 getChildren().addAll(c.getAddedSubList());
-                this.setExpanded(true);
             }
         });
     }

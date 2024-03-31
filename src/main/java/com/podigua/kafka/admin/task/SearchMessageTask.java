@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -32,6 +33,8 @@ import java.util.stream.Collectors;
  * @date 2024/03/25
  */
 public class SearchMessageTask extends QueryTask<Long> {
+
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final Logger logger = Logger.getLogger(SearchMessageTask.class.getName());
     private final AtomicLong counts = new AtomicLong(0);
 
@@ -43,6 +46,21 @@ public class SearchMessageTask extends QueryTask<Long> {
     private final QueryParams params;
     private final Consumer<ConsumerRecord<byte[], byte[]>> callback;
 
+    /**
+     * 关闭
+     */
+    public void shutdown() {
+        shutdown.set(true);
+    }
+
+    /**
+     * 是关闭
+     *
+     * @return boolean
+     */
+    public boolean isShutdown(){
+        return shutdown.get();
+    }
 
     public SearchMessageTask(String clusterId, String topic, QueryParams params, Consumer<ConsumerRecord<byte[], byte[]>> callback) {
         super(clusterId);
@@ -78,8 +96,6 @@ public class SearchMessageTask extends QueryTask<Long> {
         if (CollectionUtils.isEmpty(offsets)) {
             return 0L;
         }
-
-        long lastSendTime = System.currentTimeMillis();
         List<ConsumerRecord<byte[], byte[]>> result = new ArrayList<>();
         try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
             consumer.assign(offsets.stream().map(Offset::topicPartition).collect(Collectors.toList()));
@@ -93,11 +109,10 @@ public class SearchMessageTask extends QueryTask<Long> {
                     for (ConsumerRecord<byte[], byte[]> record : records) {
                         counts.getAndIncrement();
                         result.add(record);
-                        callback.accept(record);
-                        if (System.currentTimeMillis() - lastSendTime > 3000) {
-                            lastSendTime = System.currentTimeMillis();
-                            TooltipEvent.info(String.format(SettingClient.bundle().getString("message.search.tooltip"), counts.get(), (System.currentTimeMillis() - start))).publishAsync();
+                        if (shutdown.get()) {
+                            break exit;
                         }
+                        callback.accept(record);
                         if (record.offset() >= offset.end) {
                             break exit;
                         }

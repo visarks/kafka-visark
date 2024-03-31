@@ -14,3 +14,12 @@ create table cluster
     name    varchar(512),
     servers varchar(512)
 );
+
+create table topic_setting
+(
+    id                varchar(32) primary key,
+    clusterId         varchar(32),
+    topic             varchar(512),
+    keyDeserializer   varchar(32),
+    valueDeserializer varchar(32)
+);

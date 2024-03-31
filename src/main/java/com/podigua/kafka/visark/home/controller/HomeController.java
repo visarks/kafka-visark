@@ -24,6 +24,7 @@ import com.podigua.kafka.visark.cluster.event.ClusterConnectEvent;
 import com.podigua.kafka.visark.home.control.ClusterNodeChangeListener;
 import com.podigua.kafka.visark.home.control.ClusterNodeTreeCell;
 import com.podigua.kafka.visark.home.control.FilterableTreeItem;
+import com.podigua.kafka.visark.home.control.MainTab;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.enums.NodeType;
 import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
@@ -45,6 +46,8 @@ import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.PickResult;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
@@ -100,6 +103,7 @@ public class HomeController implements Initializable {
         EventBus.getInstance().subscribe(ClusterConnectEvent.class, event -> {
             ClusterProperty property = event.property();
             FilterableTreeItem<ClusterNode> cluster = new FilterableTreeItem<>(ClusterNode.cluster(property.getId(), property.getName(), property.getId()));
+            cluster.setExpanded(true);
             this.root.getSourceChildren().add(cluster);
             FilterableTreeItem<ClusterNode> nodes = new FilterableTreeItem<>(ClusterNode.nodes(property.getId()));
             cluster.getSourceChildren().add(nodes);
@@ -244,18 +248,7 @@ public class HomeController implements Initializable {
         if (!NodeType.topic.equals(value.type()) && !NodeType.consumer.equals(value.type())) {
             return;
         }
-        Tab tab = new Tab(value.label());
-        tab.setId(value.id());
-        if (value.type().equals(NodeType.topic)) {
-            TopicMessagePane pane = new TopicMessagePane(value);
-            tab.setContent(pane);
-        } else {
-            if (value.type().equals(NodeType.consumer)) {
-                MessageConsumerPane pane = new MessageConsumerPane(value);
-                tab.setContent(pane);
-            }
-        }
-        this.tabPane.getTabs().add(tab);
+        this.tabPane.getTabs().add(new MainTab(value));
         this.tabPane.getSelectionModel().select(this.tabPane.getTabs().size() - 1);
 
     }

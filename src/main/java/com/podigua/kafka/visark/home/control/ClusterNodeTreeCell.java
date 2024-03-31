@@ -53,7 +53,7 @@ public class ClusterNodeTreeCell extends TreeCell<ClusterNode> {
     @Override
     protected void updateItem(ClusterNode node, boolean empty) {
         super.updateItem(node, empty);
-        if (empty) {
+        if (empty || node==null) {
             setText(null);
             setGraphic(null);
             return;
