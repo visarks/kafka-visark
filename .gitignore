@@ -14,6 +14,7 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
+.fleet
 .idea
 *.iws
 *.iml
@@ -33,3 +34,5 @@ build/
 .vscode/
 /.mvn/wrapper/
 pom.xml.versionsBackup
+### MAC ###
+.DS_Store

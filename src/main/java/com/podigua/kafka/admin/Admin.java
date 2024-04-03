@@ -1,8 +1,12 @@
 package com.podigua.kafka.admin;
 
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
+import com.podigua.kafka.visark.cluster.enums.Mechanism;
+import com.podigua.kafka.visark.cluster.enums.Protocal;
 import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.common.config.SaslConfigs;
+import org.springframework.util.StringUtils;
 
 import java.util.Properties;
 
@@ -18,6 +22,10 @@ public class Admin {
      * 地址
      */
     private String bootstrapServers;
+    private Protocal protocol;
+    private Mechanism mechanism;
+    private String username;
+    private String password;
     /**
      * 连接超时时间
      */
@@ -25,6 +33,14 @@ public class Admin {
 
     public Admin(ClusterProperty property) {
         this.bootstrapServers = property.getServers();
+
+        if(property.getSecurity()){
+            this.protocol = property.getProtocal();
+            this.mechanism = property.getMechanism();
+            this.username = property.getUsername();
+            this.password = property.getPassword();
+        }
+
         timeout(SettingClient.get().getTimeout());
     }
 
@@ -64,6 +80,7 @@ public class Admin {
     public Properties properties() {
         Properties result = new Properties();
         result.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        result.put(SaslConfigs.SASL_MECHANISM, bootstrapServers);
         return result;
     }
 

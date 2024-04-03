@@ -12,7 +12,12 @@ create table cluster
 (
     id      varchar(32) primary key,
     name    varchar(512),
-    servers varchar(512)
+    servers varchar(512),
+    security bool,
+    protocal varchar(32),
+    mechanism varchar(32),
+    username varchar(512),
+    password varchar(512)
 );
 
 create table topic_setting
