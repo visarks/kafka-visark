@@ -11,8 +11,8 @@ import java.util.List;
  *
  **/
 public class ClusterClient {
-    private static final String INSERT = "insert into cluster (id,name, servers) values ('%s','%s', '%s')";
-    private static final String UPDATE = "update cluster set name = '%s', servers = '%s' where id = '%s'";
+    private static final String INSERT = "insert into cluster (id,name, servers,security,protocal,mechanism,username,password) values ('%s','%s', '%s',%b,'%s','%s','%s','%s')";
+    private static final String UPDATE = "update cluster set name = '%s', servers = '%s',security=%b,protocal='%s',mechanism='%s',username='%s',password='%s' where id = '%s'";
 
     private static final String DELETE = "delete from cluster where id = '%s'";
 
@@ -25,10 +25,10 @@ public class ClusterClient {
 
     public static void save(ClusterProperty cluster) {
         if (StringUtils.hasText(cluster.getId())) {
-            DatasourceUtils.execute(String.format(UPDATE, cluster.getName(), cluster.getServers(), cluster.getId()));
+            DatasourceUtils.execute(String.format(UPDATE,  cluster.getName(), cluster.getServers(),cluster.getSecurity(),cluster.getProtocal().name(),cluster.getMechanism().name(),cluster.getUsername(),cluster.getPassword(), cluster.getId()));
         } else {
             cluster.setId(UUIDUtils.uuid());
-            DatasourceUtils.execute(String.format(INSERT, cluster.getId(), cluster.getName(), cluster.getServers()));
+            DatasourceUtils.execute(String.format(INSERT, cluster.getId(), cluster.getName(), cluster.getServers(),cluster.getSecurity(),cluster.getProtocal().name(),cluster.getMechanism().name(),cluster.getUsername(),cluster.getPassword()));
         }
     }
 

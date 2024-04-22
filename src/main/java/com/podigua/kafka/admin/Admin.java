@@ -5,10 +5,12 @@ import com.podigua.kafka.visark.cluster.enums.Mechanism;
 import com.podigua.kafka.visark.cluster.enums.Protocal;
 import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ScramMechanism;
 import org.apache.kafka.common.config.SaslConfigs;
-import org.springframework.util.StringUtils;
+import org.apache.kafka.common.security.scram.ScramLoginModule;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * 管理
@@ -18,13 +20,30 @@ import java.util.Properties;
  */
 
 public class Admin {
+    private static Logger logger=Logger.getLogger(Admin.class.getName());
     /**
      * 地址
      */
     private String bootstrapServers;
+    /**
+     * 安全
+     */
+    private Boolean security;
+    /**
+     * 协议
+     */
     private Protocal protocol;
+    /**
+     * 机制
+     */
     private Mechanism mechanism;
+    /**
+     * 用户名
+     */
     private String username;
+    /**
+     * 密码
+     */
     private String password;
     /**
      * 连接超时时间
@@ -33,14 +52,11 @@ public class Admin {
 
     public Admin(ClusterProperty property) {
         this.bootstrapServers = property.getServers();
-
-        if(property.getSecurity()){
-            this.protocol = property.getProtocal();
-            this.mechanism = property.getMechanism();
-            this.username = property.getUsername();
-            this.password = property.getPassword();
-        }
-
+        this.security = property.getSecurity();
+        this.protocol = property.getProtocal();
+        this.mechanism = property.getMechanism();
+        this.username = property.getUsername();
+        this.password = property.getPassword();
         timeout(SettingClient.get().getTimeout());
     }
 
@@ -80,7 +96,17 @@ public class Admin {
     public Properties properties() {
         Properties result = new Properties();
         result.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        result.put(SaslConfigs.SASL_MECHANISM, bootstrapServers);
+        if(this.security){
+            switch(this.protocol) {
+                case SASL_PLAINTEXT -> {
+                    result.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, this.protocol.name());
+                    result.put(SaslConfigs.SASL_MECHANISM, this.mechanism.toString());
+                    String jaasConfig = String.format("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";", this.username, password);
+                    result.put(SaslConfigs.SASL_JAAS_CONFIG,jaasConfig);
+                }
+            }
+        }
+        result.forEach((k,v)->logger.info(k+":"+v));
         return result;
     }
 

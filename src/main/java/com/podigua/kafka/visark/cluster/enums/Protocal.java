@@ -8,9 +8,9 @@ package com.podigua.kafka.visark.cluster.enums;
  */
 public enum Protocal {
     PLAINTEXT,
-    SSL,
-    SASL_PLAINTEXT,
-    SASL_SSL;
+    SASL_PLAINTEXT;
+//    SSL,
+//    SASL_SSL;
 
     @Override
     public String toString() {

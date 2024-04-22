@@ -17,7 +17,7 @@ public class ClusterProperty {
     private final SimpleStringProperty name = new SimpleStringProperty("");
     private final SimpleStringProperty servers = new SimpleStringProperty("");
     private final SimpleBooleanProperty security = new SimpleBooleanProperty(false);
-    private final SimpleObjectProperty<Protocal> protocal = new SimpleObjectProperty(Protocal.PLAINTEXT);
+    private final SimpleObjectProperty<Protocal> protocal = new SimpleObjectProperty(Protocal.SASL_PLAINTEXT);
     private final SimpleObjectProperty<Mechanism> mechanism = new SimpleObjectProperty<>(Mechanism.PLAIN);
     private final SimpleStringProperty username = new SimpleStringProperty("");
     private final SimpleStringProperty password = new SimpleStringProperty("");

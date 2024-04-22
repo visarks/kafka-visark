@@ -4,11 +4,14 @@ import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.visark.cluster.ClusterClient;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
+import com.podigua.kafka.visark.cluster.enums.Mechanism;
+import com.podigua.kafka.visark.cluster.enums.Protocal;
 import com.podigua.kafka.visark.setting.SettingClient;
+import javafx.beans.property.SimpleListProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
@@ -29,6 +32,11 @@ public class ClusterFormController implements Initializable {
     public Button saveButton;
     public Tile nameTile;
     public Tile serverTile;
+    public Tile securityTile;
+    public Tile protocalTile;
+    public Tile mechanismTile;
+    public Tile usernameTile;
+    public Tile passwordTile;
 
     private ClusterController clusterController;
 
@@ -36,16 +44,112 @@ public class ClusterFormController implements Initializable {
     private Stage parent;
     private TextField nameField;
     private TextField serverField;
+    private CheckBox securityField;
+    private ComboBox<Mechanism> mechanismField;
+    private TextField usernameField;
+    private TextField passwordField;
 
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         initStyle();
         initNameField();
-        initServiceField();
+        initServerField();
+        initSecurityField();
+        initProtocalField();
+        initMechanismField();
+        initUsernameField();
+        initPasswordField();
     }
 
-    private void initServiceField() {
+    private void initPasswordField() {
+        passwordTile.setTitle(SettingClient.bundle().getString("cluster.table.password"));
+        passwordField = new PasswordField();
+        passwordField.textProperty().addListener((e, o, n) -> {
+            if (this.clusterProperty != null) {
+                this.clusterProperty.setPassword(n);
+            }
+        });
+        passwordTile.setAction(passwordField);
+        passwordTile.setActionHandler(passwordField::requestFocus);
+        passwordField.focusedProperty().addListener((e, o, n) -> {
+            passwordTile.setDescription("");
+        });
+        passwordField.setPrefWidth(300);
+    }
+
+    private void initUsernameField() {
+        usernameTile.setTitle(SettingClient.bundle().getString("cluster.table.username"));
+        usernameField = new TextField("");
+        usernameField.textProperty().addListener((e, o, n) -> {
+            if (this.clusterProperty != null) {
+                this.clusterProperty.setUsername(n);
+            }
+        });
+        usernameTile.setAction(usernameField);
+        usernameTile.setActionHandler(usernameField::requestFocus);
+        usernameField.focusedProperty().addListener((e, o, n) -> {
+            usernameTile.setDescription("");
+        });
+        usernameField.setPrefWidth(300);
+    }
+
+    private void initMechanismField() {
+        mechanismTile.setTitle("Mechanism");
+        mechanismField = new ComboBox<>();
+        mechanismField.setItems(new SimpleListProperty<>(Mechanism.MECHANISM));
+        mechanismField.setValue(Mechanism.PLAIN);
+        mechanismField.valueProperty().addListener((e, o, n) -> {
+            if (this.clusterProperty != null) {
+                this.clusterProperty.setMechanism(n);
+            }
+        });
+        mechanismTile.setAction(mechanismField);
+        mechanismTile.setActionHandler(mechanismField::requestFocus);
+        mechanismField.focusedProperty().addListener((e, o, n) -> {
+            mechanismTile.setDescription("");
+        });
+        mechanismField.setPrefWidth(300);
+        mechanismTile.getStyleClass().add("validate");
+    }
+
+    private void initProtocalField() {
+        protocalTile.setTitle("Protocal");
+        protocalTile.setAction(new Label("SASL_PLAINTEXT"));
+        protocalTile.getStyleClass().add("validate");
+    }
+
+    private void initSecurityField() {
+        securityTile.setTitle("Security");
+        securityField = new CheckBox();
+        securityField.setSelected(false);
+        securityField.selectedProperty().addListener((e, o, n) -> {
+            if (this.clusterProperty != null) {
+                this.clusterProperty.setSecurity(n);
+            }
+            if(n){
+                protocalTile.setVisible(true);
+                mechanismTile.setVisible(true);
+                usernameTile.setVisible(true);
+                passwordTile.setVisible(true);
+            }else{
+                protocalTile.setVisible(false);
+                mechanismTile.setVisible(false);
+                usernameTile.setVisible(false);
+                passwordTile.setVisible(false);
+
+            }
+        });
+        securityTile.setAction(securityField);
+        securityTile.setActionHandler(securityField::requestFocus);
+        securityField.focusedProperty().addListener((e, o, n) -> {
+            securityTile.setDescription("");
+        });
+        securityTile.getStyleClass().add("validate");
+    }
+
+
+    private void initServerField() {
         serverTile.setTitle(SettingClient.bundle().getString("cluster.table.servers"));
         serverField = new TextField("");
         serverField.textProperty().addListener((e, o, n) -> {
@@ -104,6 +208,17 @@ public class ClusterFormController implements Initializable {
             serverTile.setDescription("[color=red]"+SettingClient.bundle().getString("cluster.servers.required")+"[/color]");
             success = false;
         }
+        if(securityField.isSelected()){
+
+            if (!StringUtils.hasText(usernameField.getText())) {
+                usernameTile.setDescription("[color=red]"+SettingClient.bundle().getString("cluster.username.required")+"[/color]");
+                success = false;
+            }
+            if (!StringUtils.hasText(passwordField.getText())) {
+                passwordTile.setDescription("[color=red]"+SettingClient.bundle().getString("cluster.password.required")+"[/color]");
+                success = false;
+            }
+        }
         if (!success) {
             return;
         }
@@ -118,6 +233,10 @@ public class ClusterFormController implements Initializable {
         this.clusterProperty = property;
         this.nameField.setText(property.getName());
         this.serverField.setText(property.getServers());
+        this.securityField.setSelected(property.getSecurity());
+        this.usernameField.setText(property.getUsername());
+        this.mechanismField.setValue(property.getMechanism());
+        this.passwordField.setText(property.getPassword());
         this.clusterController = clusterController;
         this.parent = parent;
     }

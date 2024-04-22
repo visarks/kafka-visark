@@ -1,10 +1,16 @@
 package com.podigua.kafka.visark.cluster.enums;
 
+import com.podigua.kafka.visark.setting.enums.Themes;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import org.apache.kafka.clients.admin.ScramMechanism;
+
 /**
  * 机制
  *
  * @author podigua
  * @date 2024/04/01
+ * {@link  ScramMechanism}
  */
 public enum Mechanism {
     /**
@@ -30,4 +36,10 @@ public enum Mechanism {
     public String toString() {
         return this.label;
     }
+
+    public static ObservableList<Mechanism> MECHANISM = FXCollections.observableArrayList(
+            Mechanism.PLAIN,
+            Mechanism.SCRAM_SHA_256,
+            Mechanism.SCRAM_SHA_512
+    );
 }
