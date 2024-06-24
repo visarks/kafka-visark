@@ -30,7 +30,9 @@ import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.stage.Modality;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
@@ -273,9 +275,24 @@ public class TopicMessagePane extends BorderPane {
         TableColumn<Message, String> timestamp = new TableColumn<>("Timestamp");
         timestamp.setCellValueFactory(param -> param.getValue().timestamp());
         timestamp.setPrefWidth(220);
-
         value.prefWidthProperty().bind(table.widthProperty().subtract(priority.prefWidthProperty()).subtract(key.widthProperty()).subtract(timestamp.widthProperty()).subtract(offset.widthProperty()).subtract(partition.widthProperty()).subtract(10));
         table.getColumns().addAll(priority, partition, offset, key, value, timestamp);
+        table.setRowFactory(tv -> {
+            TableRow<Message> row = new TableRow<>();
+            row.setPrefHeight(40);
+            return row;
+        });
+        table.setOnMouseClicked(event -> {
+            if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
+                if (table.getSelectionModel().getSelectedItem() != null) {
+                    Message message = table.getSelectionModel().getSelectedItem();
+                    if (message != null) {
+                        MessageDetailPane pane = new MessageDetailPane(message);
+                        StageUtils.show(pane, "Message", Modality.NONE);
+                    }
+                }
+            }
+        });
         table.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
         TableUtils.sortPolicyProperty(this.table, filters, Message::sort);
         this.setCenter(table);
@@ -321,7 +338,7 @@ public class TopicMessagePane extends BorderPane {
             this.starting.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             var messageCounts = new AtomicLong(0);
-            consumerTask = new MessageConsumerTask(node.clusterId(), node.label(),offsetType.name(), record -> {
+            consumerTask = new MessageConsumerTask(node.clusterId(), node.label(), offsetType.name(), record -> {
                 var message = new Message(record);
                 this.rows.add(0, message);
                 messageCounts.getAndIncrement();
@@ -466,9 +483,17 @@ public class TopicMessagePane extends BorderPane {
         });
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
+        setAddMessagePane();
         tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
         header.getChildren().addAll(filters, tool);
         this.setTop(header);
+    }
+
+    private void setAddMessagePane() {
+        this.add.setOnAction((event)->{
+            AddMessagePane pane = new AddMessagePane(this.node.clusterId(), this.node.label());
+            StageUtils.show(pane, SettingClient.bundle().getString("message.sender"), Modality.NONE);
+        });
     }
 
     private ToolBar setFilterToolBar() {

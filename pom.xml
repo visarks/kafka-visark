@@ -96,6 +96,7 @@
                 <configuration>
                     <name>Kafka-Visark</name>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
+                    <appVersion>1.0.2</appVersion>
                     <vendor>破地瓜</vendor>
                     <aboutUrl>https://www.visark.net/kafka</aboutUrl>
                     <copyright>Copyright©2024破地瓜</copyright>

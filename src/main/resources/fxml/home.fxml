@@ -65,7 +65,7 @@
          <bottom>
             <HBox alignment="CENTER_RIGHT" prefHeight="24">
                <HBox fx:id="homeBox" alignment="CENTER" >
-                     <Label text="Home"/>
+
                </HBox>
                <HBox fx:id="tooltipBox" alignment="CENTER_LEFT" style="-fx-padding: 0 0 0 10">
 
