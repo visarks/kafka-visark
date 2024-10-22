@@ -220,7 +220,7 @@ public class HomeController implements Initializable {
         treeView.setShowRoot(false);
         treeView.setCellFactory(param -> new ClusterNodeTreeCell());
         treeView.setContextMenu(new ContextMenu());
-        treeView.getSelectionModel().selectedItemProperty().addListener(new ClusterNodeChangeListener(treeView));
+        treeView.getSelectionModel().selectedItemProperty().addListener(new ClusterNodeChangeListener(treeView,this.tabPane));
         openDialog();
         treeView.setOnMouseClicked(event -> {
             if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {

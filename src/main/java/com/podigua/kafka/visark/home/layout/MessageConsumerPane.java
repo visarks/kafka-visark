@@ -13,7 +13,7 @@ import javafx.scene.layout.BorderPane;
  * @author podigua
  * @date 2024/03/25
  */
-public class MessageConsumerPane extends BorderPane {
+public class MessageConsumerPane extends ContentBorderPane {
     private final ClusterNode value;
 
     public MessageConsumerPane(ClusterNode value) {
@@ -37,5 +37,10 @@ public class MessageConsumerPane extends BorderPane {
      */
     public ClusterNode value() {
         return value;
+    }
+
+    @Override
+    public void close() {
+
     }
 }

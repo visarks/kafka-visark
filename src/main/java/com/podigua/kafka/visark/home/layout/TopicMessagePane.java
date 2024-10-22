@@ -53,7 +53,7 @@ import static javafx.geometry.Orientation.VERTICAL;
  * @author podigua
  * @date 2024/03/24
  */
-public class TopicMessagePane extends BorderPane {
+public class TopicMessagePane extends ContentBorderPane {
     private final static Logger logger = Logger.getLogger(TopicMessagePane.class.getName());
     /**
      * 节点
@@ -116,7 +116,7 @@ public class TopicMessagePane extends BorderPane {
     /**
      * 计数
      */
-    private final Spinner<Integer> counts = new Spinner<>(1, 20000, 500, 500);
+    private final Spinner<Integer> counts = new Spinner<>(1, 20000, 100, 100);
 
     private final HBox dynamic = new HBox();
 
@@ -555,13 +555,19 @@ public class TopicMessagePane extends BorderPane {
         start.setTooltip(startTooltip);
     }
 
-    /**
-     * 节点
-     * <p>
-     * latest
-     */
-    public ClusterNode node() {
+    @Override
+    public ClusterNode value() {
         return node;
+    }
+
+    @Override
+    public void close() {
+        if (starting.get()) {
+            if (consumerTask != null && consumerTask.isRunning()) {
+                consumerTask.shutdown();
+                this.starting.set(false);
+            }
+        }
     }
 
     private record PartitionSelect(Integer partition, String label) {

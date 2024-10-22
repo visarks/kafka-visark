@@ -4,8 +4,6 @@ import com.podigua.kafka.admin.*;
 import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.admin.enums.SearchType;
 import com.podigua.kafka.core.utils.UUIDUtils;
-import com.podigua.kafka.event.TooltipEvent;
-import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

@@ -2,9 +2,9 @@ package com.podigua.kafka.visark.cluster.controller;
 
 import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
-import com.podigua.kafka.admin.Admin;
 import com.podigua.kafka.admin.AdminConnectTask;
 import com.podigua.kafka.admin.AdminManger;
+import com.podigua.kafka.core.FilterValue;
 import com.podigua.kafka.core.utils.AlertUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.Resources;
@@ -19,6 +19,8 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -27,9 +29,11 @@ import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
+import org.springframework.util.StringUtils;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -47,8 +51,17 @@ public class ClusterController implements Initializable {
     public TableView<ClusterProperty> tableView;
     public Button editButton;
     public CheckBox openDialog;
+    public TextField filterField;
     private Stage parentStage;
 
+
+    public static final <T> void bindTableViewFilter(TableView<T> tableView, ObservableList<T> observableList, FilterValue<T> filterValue, String newValue) {
+        FilteredList<T> filteredData = new FilteredList<>(observableList, p -> true);
+        filteredData.setPredicate(entity -> filterValue.compare(entity, newValue));
+        SortedList<T> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(tableView.comparatorProperty());
+        tableView.setItems(sortedData);
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -60,7 +73,13 @@ public class ClusterController implements Initializable {
 
     private void initTable() {
         ObservableList<ClusterProperty> items = FXCollections.observableArrayList();
-        tableView.setItems(items);
+//        filterField.textProperty().addListener((observable, oldValue, newValue) -> bindTableViewFilter(tableView, items, (entity, filter) -> {
+//            if (StringUtils.hasText(filter)) {
+//                return entity.getName().toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT)) || entity.getServers().toLowerCase(Locale.ROOT).contains(filter.toLowerCase(Locale.ROOT));
+//            }
+//            return true;
+//        }, newValue));
+        this.tableView.setItems(items);
         reload();
         tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
         TableColumn<ClusterProperty, String> priority = new TableColumn<>("#");
@@ -79,7 +98,7 @@ public class ClusterController implements Initializable {
         servers.setCellValueFactory(property -> property.getValue().servers());
         tableView.getColumns().addAll(priority, name, servers);
         name.prefWidthProperty().bind(tableView.widthProperty().subtract(priority.prefWidthProperty()).divide(3));
-        servers.prefWidthProperty().bind(tableView.widthProperty().subtract(priority.prefWidthProperty()).subtract(name.prefWidthProperty()).subtract(3));
+        servers.prefWidthProperty().bind(tableView.widthProperty().subtract(priority.prefWidthProperty()).subtract(name.prefWidthProperty()).subtract(15));
         tableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 editButton.setDisable(false);

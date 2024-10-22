@@ -2,6 +2,7 @@ package com.podigua.kafka.admin;
 
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.MemberDescription;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.ConsumerGroupState;
 import org.apache.kafka.common.Node;
 

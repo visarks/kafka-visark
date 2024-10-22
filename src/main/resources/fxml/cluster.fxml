@@ -1,21 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 
-<?import javafx.scene.control.CheckBox?>
-<AnchorPane prefHeight="386.0" prefWidth="652.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.cluster.controller.ClusterController">
+<AnchorPane prefHeight="606.0" prefWidth="1016.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.cluster.controller.ClusterController">
    <children>
       <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
             <HBox alignment="CENTER_LEFT" prefHeight="45.0" prefWidth="652.0" BorderPane.alignment="CENTER">
                <children>
-                <Button fx:id="addButton" mnemonicParsing="false" onAction="#onAdd" text="%form.new" />
+                  <Button fx:id="addButton" mnemonicParsing="false" onAction="#onAdd" text="%form.new" />
                   <Button fx:id="editButton" disable="true" layoutX="100.0" layoutY="20.0" mnemonicParsing="false" onAction="#onEdit" text="%form.edit" />
                   <Button fx:id="deleteButton" disable="true" mnemonicParsing="false" onAction="#onDelete" text="%form.delete" />
+                  <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                     <children>
+<!--                        <TextField fx:id="filterField" prefHeight="25.0" prefWidth="230.0"> </TextField>-->
+                     </children>
+                     <padding>
+                        <Insets left="5.0" right="5.0" />
+                     </padding>
+                  </HBox>
                </children>
             </HBox>
          </top>
@@ -29,9 +39,9 @@
          <bottom>
             <HBox>
                <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
-                  <CheckBox fx:id="openDialog" text="%setting.form.open.dialog"/>
+                  <CheckBox fx:id="openDialog" text="%setting.form.open.dialog" />
                </HBox>
-               <HBox  BorderPane.alignment="CENTER_RIGHT">
+               <HBox BorderPane.alignment="CENTER_RIGHT">
                   <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" onAction="#onConnect" text="%cluster.connect" />
                </HBox>
             </HBox>

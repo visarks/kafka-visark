@@ -20,9 +20,7 @@ import javafx.util.Duration;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.kordamp.ikonli.javafx.FontIcon;
-import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
-import org.kordamp.ikonli.material2.Material2OutlinedAL;
 import org.springframework.util.StringUtils;
 
 import java.util.Properties;
@@ -75,9 +73,9 @@ public class AddMessagePane extends BorderPane {
                 ProducerRecord<String, String> record = new ProducerRecord<>(this.topic, key, text);
                 this.producer.send(record, (metadata, exception) -> Platform.runLater(()->{
                     if (exception == null) {
-                        MessageUtils.success(SettingClient.bundle().getString("message.send.success"), Duration.millis(300));
+                        MessageUtils.success(SettingClient.bundle().getString("message.send.success"), Duration.millis(200));
                     } else {
-                        MessageUtils.error(exception.getMessage());
+                        throw new RuntimeException(exception);
                     }
                 }));
             }

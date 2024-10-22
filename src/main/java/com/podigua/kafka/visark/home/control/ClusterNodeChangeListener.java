@@ -2,6 +2,7 @@ package com.podigua.kafka.visark.home.control;
 
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.State;
+import com.podigua.kafka.admin.AdminManger;
 import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.admin.executor.ConsumerExistExecutor;
 import com.podigua.kafka.admin.executor.GetPartitionTaskExecutor;
@@ -31,6 +32,8 @@ import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -46,6 +49,7 @@ import static java.util.Optional.ofNullable;
  */
 public class ClusterNodeChangeListener implements ChangeListener<TreeItem<ClusterNode>> {
     private final TreeView<ClusterNode> treeView;
+    private final TabPane tabPane;
 
     /**
      * 断开
@@ -102,8 +106,9 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
     private final SeparatorMenuItem splitter1 = new SeparatorMenuItem();
 
 
-    public ClusterNodeChangeListener(TreeView<ClusterNode> treeView) {
+    public ClusterNodeChangeListener(TreeView<ClusterNode> treeView, TabPane tabPane) {
         this.treeView = treeView;
+        this.tabPane = tabPane;
         FontIcon close = new FontIcon(Material2OutlinedAL.CLOSE);
         close.getStyleClass().add(Styles.DANGER);
         this.disconnect = new MenuItem(SettingClient.bundle().getString("context.menu.disconnect"), close);
@@ -124,6 +129,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
     }
 
     private void addAction() {
+        addDisconnect();
         this.copy.setOnAction(event -> selected(ClusterNodeChangeListener::copy));
         addRefreshTopicAction();
         this.deleteTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::executeDeleteTopic));
@@ -131,12 +137,44 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         addTopicAction();
         this.showPartition.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::showPartition));
         showClusterAction();
-        this.showConsumer.setOnAction(event->selected((item,value)->{
+        this.showConsumer.setOnAction(event -> selected((item, value) -> {
             new ClusterPublishEvent(value).publish();
         }));
         this.addPartition.setOnAction(event -> checkTopicExists((item, value) -> getCurrentPartitions((current) -> addPartition(value, current))));
         addRefreshConsumerAction();
         this.offsetTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::topicOffset));
+    }
+
+    private void addDisconnect() {
+        this.disconnect.setOnAction(event -> {
+            selected((item, value) -> {
+                value.loading(true);
+                AdminManger.remove(value.clusterId());
+                TreeItem<ClusterNode> root = this.treeView.getRoot();
+                ObservableList<TreeItem<ClusterNode>> children = root.getChildren();
+                for (TreeItem<ClusterNode> child : children) {
+                    if (child.getValue() != null && child.getValue().id().equals(value.id())) {
+                        children.remove(child);
+                        clearTabs(value);
+                        break;
+                    }
+                }
+
+            });
+        });
+    }
+
+    private void clearTabs(ClusterNode value) {
+        ObservableList<Tab> tabs = this.tabPane.getTabs();
+        Iterator<Tab> iterator = tabs.iterator();
+        while (iterator.hasNext()){
+            Tab tab = iterator.next();
+            ContentBorderPane pane = (ContentBorderPane) tab.getUserData();
+            if (pane.value().clusterId().equals(value.clusterId())) {
+                pane.close();
+                iterator.remove();
+            }
+        }
     }
 
     private void deleteConsumerAction() {
@@ -401,7 +439,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                 case topic ->
                         items.addAll(showPartition, offsetTopic, addPartition, splitter, deleteTopic, splitter1, copy);
                 case consumers -> items.addAll(refreshConsumer);
-                case consumer -> items.addAll(showConsumer,splitter,deleteConsumer, splitter1, copy);
+                case consumer -> items.addAll(showConsumer, splitter, deleteConsumer, splitter1, copy);
             }
         });
     }
