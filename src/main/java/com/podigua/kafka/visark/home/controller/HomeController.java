@@ -17,6 +17,7 @@ import com.podigua.kafka.core.utils.NodeUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
+import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.event.TooltipEvent;
 import com.podigua.kafka.visark.cluster.controller.ClusterController;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
@@ -28,6 +29,7 @@ import com.podigua.kafka.visark.home.control.MainTab;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.enums.NodeType;
 import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
+import com.podigua.kafka.visark.home.layout.ContentBorderPane;
 import com.podigua.kafka.visark.home.layout.MessageConsumerPane;
 import com.podigua.kafka.visark.home.layout.TopicMessagePane;
 import com.podigua.kafka.visark.setting.SettingClient;
@@ -148,6 +150,9 @@ public class HomeController implements Initializable {
         EventBus.getInstance().subscribe(ClusterPublishEvent.class, event -> {
             addTab(event.node());
         });
+        EventBus.getInstance().subscribe(ExitPublishEvent.class, event -> {
+            close();
+        });
         EventBus.getInstance().subscribe(TooltipEvent.class, event -> {
             Platform.runLater(() -> {
                 tooltipTimer.stop();
@@ -157,6 +162,14 @@ public class HomeController implements Initializable {
                 tooltipBox.getChildren().add(label);
             });
         });
+    }
+
+    private void close() {
+        ObservableList<Tab> tabs = this.tabPane.getTabs();
+        for (Tab tab : tabs) {
+            ContentBorderPane pane = (ContentBorderPane) tab.getUserData();
+                pane.close();
+        }
     }
 
     private void query(FilterableTreeItem<ClusterNode> parent, QueryTask<List<ClusterNode>> task) {

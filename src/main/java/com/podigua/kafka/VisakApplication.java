@@ -4,6 +4,7 @@ import com.podigua.kafka.core.handler.DefaultExceptionHandler;
 import com.podigua.kafka.core.utils.DatasourceUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.event.EventBus;
+import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.ThemeChangeEvent;
 import com.podigua.kafka.visark.setting.entity.SettingProperty;
@@ -74,13 +75,14 @@ public class VisakApplication extends Application {
         stage.setMaximized(true);
         Platform.runLater(() -> {
             stage.show();
-//            stage.requestFocus();
+            stage.requestFocus();
         });
     }
 
     @Override
     public void stop() throws Exception {
         logger.info("退出程序,释放资源");
+        EventBus.getInstance().publish(new ExitPublishEvent());
         SettingClient.debounce().cancel();
     }
 }

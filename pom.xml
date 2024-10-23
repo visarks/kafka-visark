@@ -6,7 +6,7 @@
 
     <groupId>com.podigua</groupId>
     <artifactId>kafka-visark</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.3</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -96,7 +96,6 @@
                 <configuration>
                     <name>Kafka-Visark</name>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
-                    <appVersion>1.0.2</appVersion>
                     <vendor>破地瓜</vendor>
                     <aboutUrl>https://www.visark.net/kafka</aboutUrl>
                     <copyright>Copyright©2024破地瓜</copyright>
