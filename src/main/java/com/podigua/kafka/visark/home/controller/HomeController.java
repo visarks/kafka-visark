@@ -21,6 +21,7 @@ import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.event.TooltipEvent;
 import com.podigua.kafka.visark.cluster.controller.ClusterController;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
+import com.podigua.kafka.visark.cluster.event.ClusterCloseEvent;
 import com.podigua.kafka.visark.cluster.event.ClusterConnectEvent;
 import com.podigua.kafka.visark.home.control.ClusterNodeChangeListener;
 import com.podigua.kafka.visark.home.control.ClusterNodeTreeCell;
@@ -61,10 +62,7 @@ import org.kordamp.ikonli.remixicon.RemixiconAL;
 import org.springframework.util.StringUtils;
 
 import java.net.URL;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -119,6 +117,17 @@ public class HomeController implements Initializable {
             double[] positions = splitPane.getDividerPositions();
             if (positions.length == 1 && positions[0] < 0.1) {
                 this.toggleLeft(null);
+            }
+        });
+        EventBus.getInstance().subscribe(ClusterCloseEvent.class, event -> {
+            String clusterId = event.clusterId();
+            Iterator<TreeItem<ClusterNode>> iterator = this.root.getSourceChildren().iterator();
+            while (iterator.hasNext()){
+                TreeItem<ClusterNode> item = iterator.next();
+                if(item.getValue().clusterId().equals(clusterId)){
+                    iterator.remove();
+                    break;
+                }
             }
         });
         onMessage();

@@ -15,6 +15,7 @@ import com.podigua.kafka.core.utils.AlertUtils;
 import com.podigua.kafka.core.utils.ClipboardUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
+import com.podigua.kafka.visark.cluster.event.ClusterCloseEvent;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
 import com.podigua.kafka.visark.home.layout.*;
@@ -150,6 +151,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
             selected((item, value) -> {
                 value.loading(true);
                 AdminManger.remove(value.clusterId());
+                new ClusterCloseEvent(value.clusterId()).publish();
                 TreeItem<ClusterNode> root = this.treeView.getRoot();
                 ObservableList<TreeItem<ClusterNode>> children = root.getChildren();
                 for (TreeItem<ClusterNode> child : children) {
