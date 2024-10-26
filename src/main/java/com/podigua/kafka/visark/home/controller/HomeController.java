@@ -31,8 +31,6 @@ import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.enums.NodeType;
 import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
 import com.podigua.kafka.visark.home.layout.ContentBorderPane;
-import com.podigua.kafka.visark.home.layout.MessageConsumerPane;
-import com.podigua.kafka.visark.home.layout.TopicMessagePane;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -49,8 +47,6 @@ import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.PickResult;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
@@ -102,7 +98,8 @@ public class HomeController implements Initializable {
     public HomeController() {
         EventBus.getInstance().subscribe(ClusterConnectEvent.class, event -> {
             ClusterProperty property = event.property();
-            FilterableTreeItem<ClusterNode> cluster = new FilterableTreeItem<>(ClusterNode.cluster(property.getId(), property.getName(), property.getId()));
+            ClusterNode root = ClusterNode.cluster(property.getId(), property.getName(), property.getId());
+            FilterableTreeItem<ClusterNode> cluster = new FilterableTreeItem<>(root);
             cluster.setExpanded(true);
             this.root.getSourceChildren().add(cluster);
             FilterableTreeItem<ClusterNode> nodes = new FilterableTreeItem<>(ClusterNode.nodes(property.getId()));
@@ -114,6 +111,7 @@ public class HomeController implements Initializable {
             query(nodes, new QueryNodesTask(property.getId()));
             query(topics, new QueryTopicsTask(property.getId()));
             query(consumers, new QueryConsumersTask(property.getId()));
+            addTab(root);
             double[] positions = splitPane.getDividerPositions();
             if (positions.length == 1 && positions[0] < 0.1) {
                 this.toggleLeft(null);

@@ -33,7 +33,6 @@ import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -152,16 +151,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                 value.loading(true);
                 AdminManger.remove(value.clusterId());
                 new ClusterCloseEvent(value.clusterId()).publish();
-                TreeItem<ClusterNode> root = this.treeView.getRoot();
-                ObservableList<TreeItem<ClusterNode>> children = root.getChildren();
-                for (TreeItem<ClusterNode> child : children) {
-                    if (child.getValue() != null && child.getValue().id().equals(value.id())) {
-                        children.remove(child);
-                        clearTabs(value);
-                        break;
-                    }
-                }
-
+                clearTabs(value);
             });
         });
     }
