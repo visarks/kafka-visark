@@ -100,7 +100,7 @@
                 <version>0.0.4</version>
                 <configuration>
                     <name>Kafka-Visark</name>
-                    <macPackageIdentifier>com.podigua.kafka-visark</macPackageIdentifier>
+                    <macPackageIdentifier>kafka-visark</macPackageIdentifier>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
                     <vendor>破地瓜</vendor>
                     <aboutUrl>https://www.visark.net/kafka</aboutUrl>
