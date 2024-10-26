@@ -34,7 +34,7 @@ public class VisakApplication extends Application {
 
     @Override
     public void init() throws Exception {
-        Paths.identifier("kafka-visark");
+        Paths.identifier("com.podigua.kafka-visark");
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();
