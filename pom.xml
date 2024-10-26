@@ -17,6 +17,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>io.gitee.podigua</groupId>
+            <artifactId>javafx-path</artifactId>
+            <version>0.0.2</version>
+        </dependency>
+        <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
@@ -95,6 +100,7 @@
                 <version>0.0.4</version>
                 <configuration>
                     <name>Kafka-Visark</name>
+                    <macPackageIdentifier>com.podigua.kafka-visark</macPackageIdentifier>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
                     <vendor>破地瓜</vendor>
                     <aboutUrl>https://www.visark.net/kafka</aboutUrl>

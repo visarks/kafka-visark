@@ -1,5 +1,7 @@
 package com.podigua.kafka.core.utils;
 
+import com.podigua.path.Paths;
+
 import java.io.*;
 import java.util.stream.Collectors;
 
@@ -16,7 +18,7 @@ public class FileUtils {
      * @return {@link File}
      */
     public static File root() {
-        File root = new File(System.getProperty("user.home"), "kafka-visark");
+        File root = new File(Paths.app());
         if (!root.exists()) {
             if (root.mkdirs()) {
                 System.out.println("创建目录成功");

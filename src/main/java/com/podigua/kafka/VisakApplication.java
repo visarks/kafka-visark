@@ -9,6 +9,7 @@ import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.ThemeChangeEvent;
 import com.podigua.kafka.visark.setting.entity.SettingProperty;
 import com.podigua.kafka.visark.setting.enums.Themes;
+import com.podigua.path.Paths;
 import com.zaxxer.hikari.HikariDataSource;
 import javafx.application.Application;
 import javafx.application.ColorScheme;
@@ -33,6 +34,7 @@ public class VisakApplication extends Application {
 
     @Override
     public void init() throws Exception {
+        Paths.identifier("com.podigua.kafka-visark");
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();
