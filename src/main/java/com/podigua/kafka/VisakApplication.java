@@ -16,6 +16,7 @@ import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
@@ -75,6 +76,7 @@ public class VisakApplication extends Application {
         stage.setMinHeight(766);
         stage.setMinWidth(1216);
         stage.setMaximized(true);
+        stage.getIcons().add(new Image(Resources.getResource("/images/logo.png").toExternalForm()));
         Platform.runLater(() -> {
             stage.show();
             stage.requestFocus();
