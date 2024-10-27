@@ -36,6 +36,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -51,6 +53,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
 import org.kordamp.ikonli.material2.Material2OutlinedMZ;
@@ -120,9 +123,9 @@ public class HomeController implements Initializable {
         EventBus.getInstance().subscribe(ClusterCloseEvent.class, event -> {
             String clusterId = event.clusterId();
             Iterator<TreeItem<ClusterNode>> iterator = this.root.getSourceChildren().iterator();
-            while (iterator.hasNext()){
+            while (iterator.hasNext()) {
                 TreeItem<ClusterNode> item = iterator.next();
-                if(item.getValue().clusterId().equals(clusterId)){
+                if (item.getValue().clusterId().equals(clusterId)) {
                     iterator.remove();
                     break;
                 }
@@ -175,7 +178,7 @@ public class HomeController implements Initializable {
         ObservableList<Tab> tabs = this.tabPane.getTabs();
         for (Tab tab : tabs) {
             ContentBorderPane pane = (ContentBorderPane) tab.getUserData();
-                pane.close();
+            pane.close();
         }
     }
 
@@ -202,7 +205,7 @@ public class HomeController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        homeBox.prefWidthProperty().bind(leftPane.widthProperty());
+        homeBox();
         tooltipTimer.setOnFinished(event -> {
             tooltipBox.getChildren().clear();
         });
@@ -240,7 +243,7 @@ public class HomeController implements Initializable {
         treeView.setShowRoot(false);
         treeView.setCellFactory(param -> new ClusterNodeTreeCell());
         treeView.setContextMenu(new ContextMenu());
-        treeView.getSelectionModel().selectedItemProperty().addListener(new ClusterNodeChangeListener(treeView,this.tabPane));
+        treeView.getSelectionModel().selectedItemProperty().addListener(new ClusterNodeChangeListener(treeView, this.tabPane));
         openDialog();
         treeView.setOnMouseClicked(event -> {
             if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
@@ -249,6 +252,27 @@ public class HomeController implements Initializable {
                         addTab(item.getValue());
                     });
                 });
+            }
+        });
+    }
+
+    private void homeBox() {
+        var git = new Button(null, new FontIcon(AntDesignIconsOutlined.GITHUB));
+        git.setCursor(Cursor.HAND);
+        git.getStyleClass().addAll(
+                Styles.BUTTON_ICON, Styles.FLAT
+        );
+        git.setOnAction(event -> {
+            State.hostServices().showDocument("https://gitee.com/podigua/kafka-visark");
+        });
+        homeBox.getChildren().add(git);
+
+        homeBox.prefWidthProperty().bind(leftPane.widthProperty());
+        leftPane.widthProperty().addListener((o, l, n) -> {
+            if (n.intValue() < 20) {
+               homeBox.setVisible(false);
+            }else {
+                homeBox.setVisible(true);
             }
         });
     }

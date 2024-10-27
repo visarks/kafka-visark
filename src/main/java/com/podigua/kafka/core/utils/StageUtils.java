@@ -5,6 +5,8 @@ import com.podigua.kafka.State;
 import com.podigua.kafka.core.CardHeaderPane;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -56,6 +58,12 @@ public class StageUtils {
         stage.setScene(scene);
         stage.initOwner(window);
         stage.show();
+        stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{
+            if(KeyCode.ESCAPE==event.getCode()){
+                stage.close();
+            }
+        });
+        parent.requestFocus();
         return stage;
     }
 

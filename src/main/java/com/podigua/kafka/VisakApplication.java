@@ -69,6 +69,7 @@ public class VisakApplication extends Application {
     public void start(Stage stage) throws Exception {
         Thread.currentThread().setUncaughtExceptionHandler(new DefaultExceptionHandler(stage));
         State.stage = stage;
+        State.hostServices = getHostServices();
         FXMLLoader loader = Resources.getLoader("/fxml/home.fxml");
         AnchorPane root = loader.getRoot();
         Scene scene = new Scene(root);

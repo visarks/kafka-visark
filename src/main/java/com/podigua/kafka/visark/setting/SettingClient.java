@@ -40,7 +40,6 @@ public class SettingClient {
 
     public static ObservableList<Language> LANGUAGES = FXCollections.observableArrayList(
             Language.zh_cn,
-            Language.zh_taiwan,
             Language.english
     );
     private static SettingProperty INSTANCE=null;

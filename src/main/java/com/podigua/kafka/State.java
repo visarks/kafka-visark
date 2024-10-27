@@ -1,5 +1,6 @@
 package com.podigua.kafka;
 
+import javafx.application.HostServices;
 import javafx.stage.Stage;
 
 /**
@@ -9,11 +10,16 @@ import javafx.stage.Stage;
  * @time 2024/04/01
  */
 public class State {
+    static HostServices hostServices;
     static Stage stage;
     static String[] args;
 
     public static Stage stage() {
         return stage;
+    }
+
+    public static HostServices hostServices(){
+        return hostServices;
     }
 
     public static String[] args() {
