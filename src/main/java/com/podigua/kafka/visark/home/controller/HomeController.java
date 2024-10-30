@@ -231,15 +231,15 @@ public class HomeController implements Initializable {
         filter.setRight(clear);
         root = new FilterableTreeItem<>(ClusterNode.root());
         treeView.setRoot(root);
-        FilteredList<TreeItem<ClusterNode>> filters = new FilteredList<>(FXCollections.observableArrayList(root.getChildren()));
-        filter.textProperty().addListener((observable, oldValue, newValue) -> {
-            filters.setPredicate(item -> {
-                if (item == null || item.getValue() == null) {
-                    return false;
-                }
-                return item.getValue().label().toLowerCase().contains(newValue.toLowerCase());
-            });
-        });
+//        FilteredList<TreeItem<ClusterNode>> filters = new FilteredList<>(FXCollections.observableArrayList(root.getChildren()));
+//        filter.textProperty().addListener((observable, oldValue, newValue) -> {
+//            filters.setPredicate(item -> {
+//                if (item == null || item.getValue() == null) {
+//                    return false;
+//                }
+//                return item.getValue().label().toLowerCase().contains(newValue.toLowerCase());
+//            });
+//        });
         treeView.setShowRoot(false);
         treeView.setCellFactory(param -> new ClusterNodeTreeCell());
         treeView.setContextMenu(new ContextMenu());

@@ -1,5 +1,6 @@
 package com.podigua.kafka.visark.home.layout;
 
+import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
 import com.podigua.kafka.admin.task.QueryNodesTask;
 import com.podigua.kafka.core.event.LoadingEvent;
@@ -69,18 +70,21 @@ public class ShowClusterPane extends BaseRefreshPane {
     private void setTableColumn() {
         TableColumn<ClusterNode, String> id = new TableColumn<>("Id");
         id.setCellValueFactory(param -> new SimpleStringProperty(((Node) param.getValue().nativeValue()).idString()));
-        id.setPrefWidth(80);
+//        id.setPrefWidth(80);
         TableColumn<ClusterNode, String> host = new TableColumn<>("Host");
         host.setCellValueFactory(param -> new SimpleStringProperty(((Node) param.getValue().nativeValue()).host()));
 
         TableColumn<ClusterNode, String> port = new TableColumn<>("Port");
         port.setCellValueFactory(param -> new SimpleStringProperty(((Node) param.getValue().nativeValue()).port() + ""));
-        port.setPrefWidth(120);
+//        port.setPrefWidth(120);
         TableColumn<ClusterNode, String> rack = new TableColumn<>("Rack");
         rack.setCellValueFactory(param -> new SimpleStringProperty(((Node) param.getValue().nativeValue()).rack()));
-        host.prefWidthProperty().bind(tableView.widthProperty().subtract(port.prefWidthProperty()).subtract(id.prefWidthProperty()).divide(2));
-        rack.prefWidthProperty().bind(tableView.widthProperty().subtract(port.prefWidthProperty()).subtract(id.prefWidthProperty()).divide(2).subtract(9));
-        tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
+//        host.prefWidthProperty().bind(tableView.widthProperty().subtract(port.prefWidthProperty()).subtract(id.prefWidthProperty()).divide(2));
+//        rack.prefWidthProperty().bind(tableView.widthProperty().subtract(port.prefWidthProperty()).subtract(id.prefWidthProperty()).divide(2).subtract(9));
+        tableView.getStyleClass().addAll(Styles.DENSE, Styles.BORDER_SUBTLE, Styles.STRIPED, Tweaks.EDGE_TO_EDGE);
         tableView.getColumns().addAll(id, host, port, rack);
+
+
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
     }
 }

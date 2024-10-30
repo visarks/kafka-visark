@@ -1,9 +1,11 @@
 package com.podigua.kafka.visark.home.layout;
 
+import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.layout.VBox;
 import org.apache.kafka.common.TopicPartition;
 
@@ -24,11 +26,13 @@ public class ConsumerTopicPartitionPane extends VBox {
 
         TableColumn<TopicPartition, String> partition = new TableColumn<>("Partition");
         partition.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().partition() + ""));
-        partition.setPrefWidth(80);
+//        partition.setPrefWidth(80);
 
-        topic.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).subtract(10));
-        tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
+//        topic.prefWidthProperty().bind(tableView.widthProperty().subtract(partition.prefWidthProperty()).subtract(10));
+        tableView.getStyleClass().addAll(Styles.DENSE, Styles.BORDER_SUBTLE, Styles.STRIPED, Tweaks.EDGE_TO_EDGE);
         tableView.getColumns().addAll(topic, partition);
+
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         this.getChildren().add(tableView);
         this.setPrefSize(300,200);
     }

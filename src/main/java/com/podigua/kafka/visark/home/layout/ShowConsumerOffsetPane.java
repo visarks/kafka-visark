@@ -142,10 +142,12 @@ public class ShowConsumerOffsetPane extends BorderPane {
 
         TableColumn<ConsumerOffset, String> clientId = new TableColumn<>("ClientId");
         clientId.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().clientId()));
-        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_SUBSEQUENT_COLUMNS);
+
+
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         tableView.getColumns().addAll(topic, partition, start, end, offset, tag, host, memberId, clientId);
-        tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
+        tableView.getStyleClass().addAll(Styles.DENSE, Styles.BORDER_SUBTLE, Styles.STRIPED, Tweaks.EDGE_TO_EDGE);
 
     }
 }

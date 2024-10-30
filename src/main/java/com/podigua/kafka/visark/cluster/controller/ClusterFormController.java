@@ -48,6 +48,7 @@ public class ClusterFormController implements Initializable {
     private ComboBox<Mechanism> mechanismField;
     private TextField usernameField;
     private TextField passwordField;
+    private boolean isAdd;
 
 
     @Override
@@ -60,6 +61,7 @@ public class ClusterFormController implements Initializable {
         initMechanismField();
         initUsernameField();
         initPasswordField();
+        this.nameField.requestFocus();
     }
 
     private void initPasswordField() {
@@ -209,7 +211,6 @@ public class ClusterFormController implements Initializable {
             success = false;
         }
         if(securityField.isSelected()){
-
             if (!StringUtils.hasText(usernameField.getText())) {
                 usernameTile.setDescription("[color=red]"+SettingClient.bundle().getString("cluster.username.required")+"[/color]");
                 success = false;
@@ -224,13 +225,13 @@ public class ClusterFormController implements Initializable {
         }
         this.saveButton.setDisable(true);
         ClusterClient.save(this.clusterProperty);
-        this.clusterController.reload();
+        this.clusterController.success(this.clusterProperty,this.isAdd);
         this.parent.close();
         this.saveButton.setDisable(false);
     }
 
-    public void set(ClusterController clusterController, Stage parent, ClusterProperty property) {
-        this.clusterProperty = property;
+    public void set(ClusterController clusterController, Stage parent, ClusterProperty property,boolean isAdd) {
+        this.clusterProperty = property.copy();
         this.nameField.setText(property.getName());
         this.serverField.setText(property.getServers());
         this.securityField.setSelected(property.getSecurity());
@@ -239,5 +240,6 @@ public class ClusterFormController implements Initializable {
         this.passwordField.setText(property.getPassword());
         this.clusterController = clusterController;
         this.parent = parent;
+        this.isAdd = isAdd;
     }
 }
