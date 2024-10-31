@@ -92,10 +92,6 @@ public class TopicMessagePane extends ContentBorderPane {
     private final CustomTextField filter = new CustomTextField();
 
     /**
-     * 总
-     */
-    private final SimpleLongProperty total = new SimpleLongProperty(0);
-    /**
      * 刷新
      */
     private final Button refresh = new Button();
@@ -143,7 +139,7 @@ public class TopicMessagePane extends ContentBorderPane {
         addTools();
         addAction();
         setTable();
-        addBottom();
+//        addBottom();
         refreshTask();
         setMessages();
         picker.setDateTimeValue(LocalDateTime.now());
@@ -162,14 +158,7 @@ public class TopicMessagePane extends ContentBorderPane {
         Label count = new Label("0");
         count.setStyle(Styles.SUCCESS);
         count.setMinWidth(30);
-        this.total.addListener((observable, oldValue, newValue) -> {
-            count.setText(newValue + "");
-            if (newValue.longValue() == 0L) {
-                box.setVisible(false);
-            } else {
-                box.setVisible(true);
-            }
-        });
+
         box.getChildren().addAll(label, count);
         this.setBottom(box);
     }
@@ -293,7 +282,8 @@ public class TopicMessagePane extends ContentBorderPane {
                 }
             }
         });
-        table.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE, Styles.STRIPED);
+        table.getStyleClass().addAll(Styles.DENSE, Styles.BORDER_SUBTLE, Styles.STRIPED, Tweaks.EDGE_TO_EDGE);
+
         TableUtils.sortPolicyProperty(this.table, filters, Message::sort);
         this.setCenter(table);
     }
@@ -334,7 +324,6 @@ public class TopicMessagePane extends ContentBorderPane {
                 }
             }
             this.rows.clear();
-            this.total.set(0);
             this.starting.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             var messageCounts = new AtomicLong(0);
@@ -345,7 +334,6 @@ public class TopicMessagePane extends ContentBorderPane {
             });
             long start = System.currentTimeMillis();
             consumerTask.setOnSucceeded(e -> {
-                this.total.set(messageCounts.get());
                 this.starting.set(false);
                 if (consumerTask.isShutdown()) {
                     MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.cancel"), messageCounts.get(), System.currentTimeMillis() - start));
@@ -405,7 +393,6 @@ public class TopicMessagePane extends ContentBorderPane {
                 }
             }
             this.rows.clear();
-            this.total.set(0);
             this.searching.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             SearchType searchType = (SearchType) typeGroup.getSelectedToggle().getUserData();
@@ -417,7 +404,6 @@ public class TopicMessagePane extends ContentBorderPane {
             });
             long start = System.currentTimeMillis();
             searchTask.setOnSucceeded(e -> {
-                this.total.set(messageCounts.get());
                 this.searching.set(false);
                 if (searchTask.isShutdown()) {
                     MessageUtils.success(String.format(SettingClient.bundle().getString("message.search.cancel"), messageCounts.get(), System.currentTimeMillis() - start));

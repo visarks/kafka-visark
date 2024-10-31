@@ -36,6 +36,12 @@ public class StageUtils {
         stage.setScene(scene);
         stage.initOwner(State.stage());
         stage.show();
+        stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{
+            if(KeyCode.ESCAPE==event.getCode()){
+                stage.close();
+            }
+        });
+        parent.requestFocus();
         return stage;
     }
     /**

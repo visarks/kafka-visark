@@ -5,17 +5,23 @@ import atlantafx.base.theme.Styles;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.podigua.kafka.core.utils.ClipboardUtils;
+import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.visark.home.entity.Message;
+import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2AL;
 
 /**
  * 消息详细信息窗格
@@ -24,6 +30,12 @@ import javafx.scene.layout.VBox;
  * @date 2024/05/08
  */
 public class MessageDetailPane extends VBox {
+    private static ObjectMapper MAPPER = new ObjectMapper();
+
+    static {
+        MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+    }
+
     private final Message message;
 
     public MessageDetailPane(Message message) {
@@ -37,7 +49,6 @@ public class MessageDetailPane extends VBox {
         top.getChildren().addAll(left, right);
         left.prefWidthProperty().bind(top.widthProperty().divide(2));
         right.prefWidthProperty().bind(top.widthProperty().divide(2));
-
         VBox content = new VBox();
         this.getChildren().add(top);
         HBox tools = new HBox();
@@ -63,10 +74,8 @@ public class MessageDetailPane extends VBox {
                 } else if ("json".equals(item)) {
                     try {
                         if (text.startsWith("[") || text.startsWith("{")) {
-                            ObjectMapper mapper = new ObjectMapper();
-                            JsonNode node = mapper.readTree(text);
-                            mapper.enable(SerializationFeature.INDENT_OUTPUT);
-                            value.setText(mapper.writeValueAsString(node));
+                            JsonNode node = MAPPER.readTree(text);
+                            value.setText(MAPPER.writeValueAsString(node));
                         } else {
                             throw new RuntimeException("e");
                         }
@@ -79,7 +88,14 @@ public class MessageDetailPane extends VBox {
         });
         comboBox.setValue("json");
         comboBox.fireEvent(new ActionEvent());
-        tools.getChildren().add(comboBox);
+        Button button = new Button(null, new FontIcon(Material2AL.CONTENT_COPY));
+        button.getStyleClass().addAll(Styles.FLAT, Styles.BUTTON_ICON, Styles.ACCENT);
+        button.setOnAction(e -> {
+            if (ClipboardUtils.copy(value.getText())) {
+                MessageUtils.success(SettingClient.bundle().getString("copy.success"));
+            }
+        });
+        tools.getChildren().addAll(comboBox, button);
         VBox.setVgrow(value, Priority.ALWAYS);
         content.getChildren().add(value);
     }

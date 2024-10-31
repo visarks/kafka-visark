@@ -11,10 +11,16 @@ import javafx.scene.input.ClipboardContent;
  * @date 2024/03/22
  */
 public class ClipboardUtils {
-    public static void copy(String text) {
+    /**
+     * 复制
+     *
+     * @param text 发短信
+     * @return boolean
+     */
+    public static boolean copy(String text) {
         Clipboard clipboard = Clipboard.getSystemClipboard();
         ClipboardContent content = new ClipboardContent();
         content.putString(text);
-        clipboard.setContent(content);
+        return clipboard.setContent(content);
     }
 }

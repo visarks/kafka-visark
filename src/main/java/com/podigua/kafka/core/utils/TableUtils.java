@@ -1,10 +1,8 @@
 package com.podigua.kafka.core.utils;
 
 
-import com.podigua.kafka.visark.home.entity.Message;
 import javafx.collections.transformation.FilteredList;
 import javafx.scene.control.TableView;
-import javafx.util.Callback;
 
 import java.util.Comparator;
 import java.util.function.Function;

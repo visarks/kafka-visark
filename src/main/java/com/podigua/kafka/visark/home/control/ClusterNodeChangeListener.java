@@ -246,8 +246,9 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
     }
 
     private static void copy(FilterableTreeItem<ClusterNode> item, ClusterNode value) {
-        ClipboardUtils.copy(value.label());
-        MessageUtils.success(SettingClient.bundle().getString("copy.success"));
+        if (ClipboardUtils.copy(value.label())) {
+            MessageUtils.success(SettingClient.bundle().getString("copy.success"));
+        }
     }
 
     /**
