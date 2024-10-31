@@ -11,7 +11,7 @@
 
 <?import javafx.scene.control.TreeTableView?>
 <?import atlantafx.base.controls.CustomTextField?>
-<AnchorPane prefHeight="606.0" prefWidth="1016.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.cluster.controller.ClusterController">
+<AnchorPane prefHeight="506.0" prefWidth="866.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.podigua.kafka.visark.cluster.controller.ClusterController">
    <children>
       <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
