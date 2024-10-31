@@ -20,8 +20,9 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.logging.Logger;
 
 /**
  * 启动类
@@ -31,11 +32,10 @@ import java.util.logging.Logger;
  */
 
 public class VisakApplication extends Application {
-    private Logger logger = Logger.getLogger(VisakApplication.class.getSimpleName());
+    private static Logger logger = LoggerFactory.getLogger(VisakApplication.class);
 
     @Override
     public void init() throws Exception {
-        Paths.identifier("Kafka-Visark");
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();

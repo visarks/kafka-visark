@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Objects;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
 
 /**
  *

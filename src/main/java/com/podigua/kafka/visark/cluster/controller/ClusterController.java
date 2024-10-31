@@ -31,6 +31,8 @@ import javafx.stage.Stage;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.net.URL;
@@ -38,7 +40,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 
 /**
  * 集群控制器
@@ -47,7 +48,7 @@ import java.util.logging.Logger;
  * @date 2024/03/21
  */
 public class ClusterController implements Initializable {
-    private final static Logger logger = Logger.getLogger(ClusterController.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(ClusterController.class);
     public Button addButton;
     public Button deleteButton;
     public Button connectButton;
@@ -287,7 +288,7 @@ public class ClusterController implements Initializable {
             ConnectPane pane = new ConnectPane(e -> task.cancel());
             Stage stage = StageUtils.body(pane, parentStage);
             task.setOnSucceeded(e -> {
-                logger.info("连接成功:" + property.getServers());
+                logger.info("连接成功:{}" , property.getServers());
                 try {
                     AdminManger.put(property.getId(), task.get());
                     MessageUtils.success(SettingClient.bundle().getString("alert.connect.success"));
@@ -301,13 +302,13 @@ public class ClusterController implements Initializable {
                 parentStage.close();
             });
             task.setOnFailed(e -> {
-                logger.warning("连接失败:" + property.getServers());
+                logger.warn("连接失败:{}" , property.getServers());
                 stage.close();
                 Throwable translate = AdminManger.translate(e.getSource().getException());
                 AlertUtils.error(parentStage, translate.getMessage());
             });
             task.setOnCancelled(e -> {
-                logger.warning("取消连接:" + property.getServers());
+                logger.warn("取消连接:{}", property.getServers());
                 stage.close();
             });
             new Thread(task).start();

@@ -36,6 +36,7 @@ import javafx.stage.Modality;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -43,7 +44,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
 
 import static javafx.geometry.Orientation.VERTICAL;
 
@@ -54,7 +55,7 @@ import static javafx.geometry.Orientation.VERTICAL;
  * @date 2024/03/24
  */
 public class TopicMessagePane extends ContentBorderPane {
-    private final static Logger logger = Logger.getLogger(TopicMessagePane.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(TopicMessagePane.class);
     /**
      * 节点
      */

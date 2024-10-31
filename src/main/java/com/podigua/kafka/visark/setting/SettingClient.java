@@ -12,7 +12,8 @@ import javafx.collections.ObservableList;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 出厂设置
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
 public class SettingClient {
     private final static String INSERT = "insert into setting(id,language,theme,timeout,autoTheme,openDialog) values ('1','%s','%s',%d,%b,%b)";
     private final static String UPDATE = "update setting set language='%s',theme='%s',timeout=%d,autoTheme=%b,openDialog=%b where id='1'";
-    private final static Logger logger = Logger.getLogger(SettingClient.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(SettingClient.class);
     private final static Debounce DEBOUNCE = new Debounce(Duration.ofMillis(100));
     public static ObservableList<Themes> THEMES = FXCollections.observableArrayList(
             Themes.primer_light,
@@ -78,7 +79,7 @@ public class SettingClient {
             String language = setting.getLanguage().name();
             String theme = setting.getTheme().name();
             DatasourceUtils.execute(String.format(UPDATE, language, theme,setting.getTimeout(),setting.getAutoTheme(),setting.getOpenDialog()));
-            logger.info("更新配置");
+            logger.info("更新配置:{}",setting);
         });
     }
 

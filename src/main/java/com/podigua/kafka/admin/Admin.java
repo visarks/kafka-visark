@@ -5,12 +5,12 @@ import com.podigua.kafka.visark.cluster.enums.Mechanism;
 import com.podigua.kafka.visark.cluster.enums.Protocal;
 import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.ScramMechanism;
 import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.security.scram.ScramLoginModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.util.Properties;
-import java.util.logging.Logger;
 
 /**
  * 管理
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 
 public class Admin {
-    private static Logger logger=Logger.getLogger(Admin.class.getName());
+    private static final Logger logger= LoggerFactory.getLogger(Admin.class);
     /**
      * 地址
      */
@@ -96,17 +96,20 @@ public class Admin {
     public Properties properties() {
         Properties result = new Properties();
         result.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+
         if(this.security){
-            switch(this.protocol) {
-                case SASL_PLAINTEXT -> {
-                    result.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, this.protocol.name());
-                    result.put(SaslConfigs.SASL_MECHANISM, this.mechanism.toString());
-                    String jaasConfig = String.format("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";", this.username, password);
-                    result.put(SaslConfigs.SASL_JAAS_CONFIG,jaasConfig);
-                }
+            if(this.protocol!=null){
+                result.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, this.protocol.name());
+            }
+            if(this.mechanism!=null){
+                result.put(SaslConfigs.SASL_MECHANISM, this.mechanism.toString());
+            }
+            if(StringUtils.hasText(this.username) && StringUtils.hasText(this.password)){
+                String jaasConfig = String.format("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";", this.username, password);
+                result.put(SaslConfigs.SASL_JAAS_CONFIG,jaasConfig);
             }
         }
-        result.forEach((k,v)->logger.info(k+":"+v));
+        logger.info("properties:{}",result);
         return result;
     }
 

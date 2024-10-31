@@ -2,6 +2,8 @@ package com.podigua.kafka.core.utils;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
@@ -11,7 +13,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * 数据源实用程序
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
  * @date 2024/03/19
  */
 public class DatasourceUtils {
-    private static final Logger logger = Logger.getLogger(DatasourceUtils.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(DatasourceUtils.class);
     public static HikariDataSource DATASOURCE = init();
 
     private static JdbcTemplate TEMPLATE = new JdbcTemplate(DATASOURCE);
@@ -54,7 +55,7 @@ public class DatasourceUtils {
      * @return {@link List}<{@link T}>
      */
     public static <T> List<T> query4List(String sql, Class<T> clazz) {
-        logger.info("查询集合:" + sql);
+        logger.info("查询集合:{}", sql);
         return TEMPLATE.query(sql, new BeanPropertyRowMapper<>(clazz));
     }
 
@@ -70,11 +71,11 @@ public class DatasourceUtils {
         if (CollectionUtils.isEmpty(result)) {
             return null;
         }
-        return result.get(0);
+        return result.getFirst();
     }
 
     public static void execute(String sql) {
-        logger.info("执行sql:" + sql);
+        logger.info("执行sql:{}", sql);
         TEMPLATE.execute(sql);
     }
 }
