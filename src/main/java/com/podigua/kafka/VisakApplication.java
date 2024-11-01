@@ -9,19 +9,28 @@ import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.ThemeChangeEvent;
 import com.podigua.kafka.visark.setting.entity.SettingProperty;
 import com.podigua.kafka.visark.setting.enums.Themes;
-import com.podigua.path.Paths;
+import com.sun.javafx.menu.MenuBase;
+import com.sun.javafx.scene.control.GlobalMenuAdapter;
+import com.sun.javafx.tk.Toolkit;
 import com.zaxxer.hikari.HikariDataSource;
 import javafx.application.Application;
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -36,6 +45,9 @@ public class VisakApplication extends Application {
 
     @Override
     public void init() throws Exception {
+        logger.info("启动程序, args:{}", Arrays.toString(State.args()));
+        logger.info("启动程序, properties:{}", System.getProperties());
+        logger.info("启动程序, env:{}", System.getenv());
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();
@@ -49,6 +61,7 @@ public class VisakApplication extends Application {
     private void subscribe() {
         onThemeChange();
     }
+
     private static void onThemeChange() {
         EventBus.getInstance().subscribe(ThemeChangeEvent.class, event -> {
             SettingProperty property = SettingClient.get();
@@ -67,6 +80,8 @@ public class VisakApplication extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        boolean supported = Toolkit.getToolkit().getSystemMenu().isSupported();
+        logger.info("是否支持系统菜单:{}", supported);
         Thread.currentThread().setUncaughtExceptionHandler(new DefaultExceptionHandler(stage));
         State.stage = stage;
         State.hostServices = getHostServices();
