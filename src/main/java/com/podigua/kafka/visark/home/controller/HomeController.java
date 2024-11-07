@@ -33,7 +33,6 @@ import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
 import com.podigua.kafka.visark.home.layout.ContentBorderPane;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.ThemeChangeEvent;
-import com.podigua.kafka.visark.setting.entity.SettingProperty;
 import com.podigua.kafka.visark.setting.enums.Themes;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
