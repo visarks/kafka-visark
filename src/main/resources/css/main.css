@@ -26,7 +26,9 @@
 #leftPane .cluster-tree-view-parent {
     -fx-background-color: -color-bg-default;
 }
-
+.bg-default{
+    -fx-background-color: -color-bg-inset;
+}
 .cluster-tree-view {
     -fx-padding: 0;
     -fx-indent: 0;

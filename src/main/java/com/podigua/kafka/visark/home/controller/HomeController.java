@@ -32,15 +32,17 @@ import com.podigua.kafka.visark.home.enums.NodeType;
 import com.podigua.kafka.visark.home.event.ClusterPublishEvent;
 import com.podigua.kafka.visark.home.layout.ContentBorderPane;
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.podigua.kafka.visark.setting.ThemeChangeEvent;
+import com.podigua.kafka.visark.setting.entity.SettingProperty;
+import com.podigua.kafka.visark.setting.enums.Themes;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.application.Application;
+import javafx.application.ColorScheme;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXMLLoader;
@@ -54,6 +56,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
+import org.kordamp.ikonli.fluentui.FluentUiRegularMZ;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
 import org.kordamp.ikonli.material2.Material2OutlinedMZ;
@@ -71,6 +74,8 @@ import java.util.concurrent.ExecutionException;
  * @date 2024/03/18
  */
 public class HomeController implements Initializable {
+    private final FontIcon moonFontIcon=new FontIcon(FluentUiRegularMZ.WEATHER_MOON_16);
+    private final FontIcon sunFontIcon=new FontIcon(Material2OutlinedMZ.WB_SUNNY);
     public Button clusterButton;
     public Button settingButton;
     public CustomTextField filter;
@@ -79,6 +84,7 @@ public class HomeController implements Initializable {
     public AnchorPane leftPane;
     public Button toggleLeftButton;
     public SplitPane splitPane;
+    public SimpleBooleanProperty isLight=new SimpleBooleanProperty();
 
     private final Timeline timeline = new Timeline();
     public AnchorPane rootPane;
@@ -93,7 +99,8 @@ public class HomeController implements Initializable {
 
     public HBox state;
     public HBox tooltipBox;
-    public HBox homeBox;
+    public Button giteeButton;
+    public Button themeButton;
     private FilterableTreeItem<ClusterNode> root;
 
     private final Timeline tooltipTimer = new Timeline(new KeyFrame(Duration.seconds(3)));
@@ -205,7 +212,7 @@ public class HomeController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        homeBox();
+        initTheme();
         tooltipTimer.setOnFinished(event -> {
             tooltipBox.getChildren().clear();
         });
@@ -226,7 +233,13 @@ public class HomeController implements Initializable {
         });
         clusterButton.setGraphic(new FontIcon(Material2OutlinedAL.FOLDER));
         settingButton.setGraphic(new FontIcon(Material2OutlinedMZ.SETTINGS));
+        giteeButton.setGraphic(new FontIcon(AntDesignIconsOutlined.GITHUB));
         toggleLeftButton.setGraphic(new FontIcon(RemixiconAL.LAYOUT_LEFT_LINE));
+        clusterButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
+        settingButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
+        giteeButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
+        toggleLeftButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
+        resetTheme();
         filter.setLeft(new FontIcon(Material2OutlinedAL.FILTER_ALT));
         filter.setRight(clear);
         root = new FilterableTreeItem<>(ClusterNode.root());
@@ -256,26 +269,59 @@ public class HomeController implements Initializable {
         });
     }
 
-    private void homeBox() {
-        var git = new Button(null, new FontIcon(AntDesignIconsOutlined.GITHUB));
-        git.setCursor(Cursor.HAND);
-        git.getStyleClass().addAll(
-                Styles.BUTTON_ICON, Styles.FLAT
-        );
-        git.setOnAction(event -> {
-            State.hostServices().showDocument("https://gitee.com/podigua/kafka-visark");
+    private void initTheme() {
+        EventBus.getInstance().subscribe(ThemeChangeEvent.class, event -> {
+            resetThemeIcon();
         });
-        homeBox.getChildren().add(git);
-
-        homeBox.prefWidthProperty().bind(leftPane.widthProperty());
-        leftPane.widthProperty().addListener((o, l, n) -> {
-            if (n.intValue() < 20) {
-               homeBox.setVisible(false);
-            }else {
-                homeBox.setVisible(true);
-            }
+        themeButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
+        isLight.addListener((observable, oldValue, newValue) -> {
+            changeThemeIcon(newValue);
         });
+        resetThemeIcon();
     }
+
+    private void changeThemeIcon(Boolean newValue) {
+        if(newValue){
+            themeButton.setGraphic(moonFontIcon);
+        }else{
+            themeButton.setGraphic(sunFontIcon);
+        }
+    }
+
+    private void resetThemeIcon() {
+        if (SettingClient.get().getAutoTheme()) {
+            ColorScheme scheme = Platform.getPreferences().getColorScheme();
+            if (ColorScheme.DARK.equals(scheme)) {
+                isLight.setValue(false);
+                changeThemeIcon(false);
+            } else {
+                isLight.setValue(true);
+                changeThemeIcon(true);
+            }
+        }else{
+            Themes theme = SettingClient.get().getTheme();
+            switch (theme){
+                case nord_dark:
+                case primer_dark:
+                case cupertino_dark:
+                case dracula:
+                    isLight.setValue(false);
+                    changeThemeIcon(false);
+                    break;
+                case nord_light:
+                case primer_light:
+                case cupertino_light:
+                    isLight.setValue(true);
+                    changeThemeIcon(true);
+                    break;
+            }
+        }
+    }
+
+    private void resetTheme() {
+
+    }
+
 
     private void addTab(ClusterNode value) {
         ObservableList<Tab> tabs = this.tabPane.getTabs();
@@ -341,5 +387,18 @@ public class HomeController implements Initializable {
             timeline.play();
         }
         SplitPane.setResizableWithParent(leftPane, false);
+    }
+
+    public void showGit(ActionEvent event) {
+        State.hostServices().showDocument("https://gitee.com/podigua/kafka-visark");
+    }
+
+    public void changeTheme(ActionEvent event) {
+        isLight.setValue(!isLight.getValue());
+        if(isLight.getValue()){
+            Application.setUserAgentStylesheet(Themes.primer_light.theme().getUserAgentStylesheet());
+        }else{
+            Application.setUserAgentStylesheet(Themes.primer_dark.theme().getUserAgentStylesheet());
+        }
     }
 }
