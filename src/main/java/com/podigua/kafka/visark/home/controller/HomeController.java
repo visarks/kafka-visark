@@ -292,10 +292,8 @@ public class HomeController implements Initializable {
             ColorScheme scheme = Platform.getPreferences().getColorScheme();
             if (ColorScheme.DARK.equals(scheme)) {
                 isLight.setValue(false);
-                changeThemeIcon(false);
             } else {
                 isLight.setValue(true);
-                changeThemeIcon(true);
             }
         }else{
             Themes theme = SettingClient.get().getTheme();
@@ -305,16 +303,15 @@ public class HomeController implements Initializable {
                 case cupertino_dark:
                 case dracula:
                     isLight.setValue(false);
-                    changeThemeIcon(false);
                     break;
                 case nord_light:
                 case primer_light:
                 case cupertino_light:
                     isLight.setValue(true);
-                    changeThemeIcon(true);
                     break;
             }
         }
+        changeThemeIcon(isLight.getValue());
     }
 
     private void resetTheme() {
