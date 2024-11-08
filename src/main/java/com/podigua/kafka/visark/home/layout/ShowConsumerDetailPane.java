@@ -1,26 +1,12 @@
 package com.podigua.kafka.visark.home.layout;
 
-import atlantafx.base.controls.CustomTextField;
-import atlantafx.base.theme.Styles;
-import atlantafx.base.theme.Tweaks;
+import atlantafx.base.controls.Tile;
 import com.podigua.kafka.admin.task.QuerySingleConsumerTask;
 import com.podigua.kafka.core.event.LoadingEvent;
-import com.podigua.kafka.core.utils.Messages;
-import com.podigua.kafka.core.utils.NodeUtils;
-import com.podigua.kafka.visark.home.control.AssignmentTableCell;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.geometry.Orientation;
-import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
+import com.podigua.kafka.visark.home.entity.ConsumerDescription;
+import javafx.scene.control.Label;
+import javafx.scene.layout.*;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
-import org.apache.kafka.clients.admin.MemberDescription;
-import org.kordamp.ikonli.javafx.FontIcon;
-import org.kordamp.ikonli.material2.Material2MZ;
-import org.springframework.util.StringUtils;
 
 /**
  * 显示consumer 详情
@@ -37,31 +23,15 @@ public class ShowConsumerDetailPane extends BorderPane {
      * 组 ID
      */
     private final String groupId;
-    /**
-     * 搜索
-     */
-    private final Button search = new Button();
 
-    private final CustomTextField filter = new CustomTextField("");
 
-    private final FontIcon searchIcon = new FontIcon(Material2MZ.SEARCH);
+    private final ConsumerDescription description = new ConsumerDescription();
 
-    private final ObservableList<MemberDescription> rows = FXCollections.observableArrayList();
-
-    /**
-     * 过滤 器
-     */
-    private FilteredList<MemberDescription> filters = new FilteredList<>(rows);
-    /**
-     * 表视图
-     */
-    private final TableView<MemberDescription> tableView = new TableView<>();
 
     public ShowConsumerDetailPane(String clusterId, String groupId) {
         this.clusterId = clusterId;
         this.groupId = groupId;
-        this.tableView.setItems(filters);
-        addTop();
+        this.prefHeight(200);
         addCenter();
         reload();
     }
@@ -70,14 +40,12 @@ public class ShowConsumerDetailPane extends BorderPane {
      * 重新加载
      */
     protected void reload() {
-        LoadingEvent.LOADING.publish();
-        this.rows.clear();
         QuerySingleConsumerTask task = new QuerySingleConsumerTask(clusterId, groupId);
         task.setOnSucceeded(event -> {
             LoadingEvent.STOP.publish();
             try {
-                ConsumerGroupDescription description = task.get();
-                this.rows.addAll(description.members());
+                ConsumerGroupDescription groupDescription = task.get();
+                description.reset(groupDescription);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -88,49 +56,34 @@ public class ShowConsumerDetailPane extends BorderPane {
         new Thread(task).start();
     }
 
-
-    private void addTop() {
-        this.filter.setPromptText(Messages.filter());
-        FontIcon icon = NodeUtils.clear(() -> filter.setText(""));
-        filter.setRight(icon);
-        filter.textProperty().addListener((observable, oldValue, newValue) -> {
-            filters.predicateProperty().set(node -> {
-                if (node == null || !StringUtils.hasText(newValue)) {
-                    return true;
-                }
-                return node.clientId().toLowerCase().contains(newValue.toLowerCase()) ||node.host().toLowerCase().contains(newValue.toLowerCase());
-            });
-        });
-        this.filter.setPrefWidth(220);
-        ToolBar toolBar = new ToolBar();
-        search.setGraphic(searchIcon);
-        search.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
-        search.setOnAction(event -> reload());
-        toolBar.getItems().addAll(filter, new Separator(Orientation.VERTICAL), search);
-        this.setTop(toolBar);
-    }
-
     private void addCenter() {
-        setTableColumn();
-        this.setCenter(this.tableView);
+        GridPane grid=new GridPane(2,2);
+        grid.setStyle("-fx-background-color: red;");
+        grid.getRowConstraints().add(row1());
+        grid.add(groupId(),0,0);
+        grid.add(groupId(),0,1);
+        grid.add(groupId(),1,0);
+        this.setCenter(grid);
     }
 
-    private void setTableColumn() {
-        TableColumn<MemberDescription, String> memberId = new TableColumn<>("MemberId");
-        memberId.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().consumerId()));
+    private RowConstraints row1() {
+        RowConstraints result=new RowConstraints();
 
-        TableColumn<MemberDescription, String> clientId = new TableColumn<>("ClientId");
-        clientId.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().clientId()));
-
-        TableColumn<MemberDescription, String> host = new TableColumn<>("Host");
-        host.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().host()));
-
-        TableColumn<MemberDescription, Number> assignment = new TableColumn<>("Assignment");
-        assignment.setCellFactory(column -> new AssignmentTableCell());
-        assignment.setCellValueFactory(features -> new SimpleObjectProperty<>(features.getValue().assignment().topicPartitions().size()));
-
-        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        tableView.getStyleClass().addAll(Tweaks.EDGE_TO_EDGE);
-        tableView.getColumns().addAll(memberId, clientId, host, assignment);
+        return result;
     }
+
+    private HBox groupId() {
+        Tile group = new Tile();
+        group.setTitle("groupId");
+        Label label = new Label();
+        this.description.groupIdProperty().addListener((e, o, n) -> {
+            label.setText(n);
+        });
+        group.setAction(label);
+        HBox result = new HBox(group);
+        result.setStyle("-fx-background-color: blue;");
+        return result;
+    }
+
+
 }

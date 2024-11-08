@@ -105,4 +105,16 @@ public class StageUtils {
         return show(parent,title,State.stage());
     }
 
+    public static Stage none() {
+        Stage stage = new Stage();
+        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.initOwner(State.stage());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{
+            if(KeyCode.ESCAPE==event.getCode()){
+                stage.close();
+            }
+        });
+        return stage;
+    }
 }

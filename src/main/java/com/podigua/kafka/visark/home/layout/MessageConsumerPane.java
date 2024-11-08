@@ -5,7 +5,6 @@ import com.podigua.kafka.visark.home.entity.ClusterNode;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.layout.BorderPane;
 
 /**
  * 消息使用者窗格
@@ -18,10 +17,12 @@ public class MessageConsumerPane extends ContentBorderPane {
 
     public MessageConsumerPane(ClusterNode value) {
         ShowConsumerDetailPane detail = new ShowConsumerDetailPane(value.clusterId(), value.label());
+        ShowConsumerMemberPane member = new ShowConsumerMemberPane(value.clusterId(), value.label());
         ShowConsumerOffsetPane offset = new ShowConsumerOffsetPane(value.clusterId(), value.label());
         this.value = value;
+//        this.setTop(detail);
         TabPane tab = new TabPane();
-        tab.getTabs().addAll(tab(Messages.members(), detail), tab(Messages.offset(), offset));
+        tab.getTabs().addAll(tab(Messages.members(), member), tab(Messages.offset(), offset));
         this.setCenter(tab);
     }
 

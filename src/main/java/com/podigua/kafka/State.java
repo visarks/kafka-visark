@@ -10,6 +10,8 @@ import javafx.stage.Stage;
  * @time 2024/04/01
  */
 public class State {
+    public static String PRODUCT="Kafka-Visark";
+    public static String VERSION="1.1.6";
     static HostServices hostServices;
     static Stage stage;
     static String[] args;

@@ -1,8 +1,10 @@
 package com.podigua.kafka;
 
+import com.podigua.kafka.about.AbortPane;
 import com.podigua.kafka.core.handler.DefaultExceptionHandler;
 import com.podigua.kafka.core.utils.DatasourceUtils;
 import com.podigua.kafka.core.utils.Resources;
+import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
 import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.visark.setting.SettingClient;
@@ -11,11 +13,17 @@ import com.podigua.kafka.visark.setting.entity.SettingProperty;
 import com.podigua.kafka.visark.setting.enums.Themes;
 import com.sun.javafx.tk.Toolkit;
 import com.zaxxer.hikari.HikariDataSource;
+import de.jangassen.MenuToolkit;
+import de.jangassen.model.AppearanceMode;
 import javafx.application.Application;
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -73,6 +81,7 @@ public class VisakApplication extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        initMenu();
         boolean supported = Toolkit.getToolkit().getSystemMenu().isSupported();
         logger.info("是否支持系统菜单:{}", supported);
         Thread.currentThread().setUncaughtExceptionHandler(new DefaultExceptionHandler(stage));
@@ -90,6 +99,18 @@ public class VisakApplication extends Application {
             stage.show();
             stage.requestFocus();
         });
+    }
+
+    private static void initMenu() {
+        Stage stage=StageUtils.none();
+        stage.setScene(new Scene(new AbortPane(event -> stage.close()),367,240));
+        MenuItem about = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createAboutMenuItem(State.PRODUCT, stage);
+        MenuItem hide = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createHideMenuItem(State.PRODUCT);
+        MenuItem hideOthers = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createHideOthersMenuItem();
+        MenuItem quit = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createQuitMenuItem(State.PRODUCT);
+        Menu menu=new Menu();
+        menu.getItems().addAll(about,new SeparatorMenuItem(),hide,hideOthers,new SeparatorMenuItem(),quit);
+        MenuToolkit.toolkit(SettingClient.bundle().getLocale()).setApplicationMenu(menu);
     }
 
     @Override

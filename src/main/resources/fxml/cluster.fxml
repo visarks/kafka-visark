@@ -45,7 +45,7 @@
                   <CheckBox fx:id="openDialog" text="%setting.form.open.dialog" />
                </HBox>
                <HBox BorderPane.alignment="CENTER_RIGHT">
-                  <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" onAction="#onConnect" text="%cluster.connect" />
+                  <Button fx:id="connectButton" defaultButton="true" disable="true" mnemonicParsing="false" onAction="#onConnect" visible="false" text="%cluster.connect" />
                </HBox>
             </HBox>
          </bottom>

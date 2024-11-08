@@ -52,4 +52,14 @@ public enum Themes {
     public Theme theme() {
         return this.theme;
     }
+
+    public boolean isLight() {
+    	switch (this){
+            case cupertino_light:
+            case primer_light:
+            case nord_light:
+                return true;
+        }
+        return false;
+    }
 }
