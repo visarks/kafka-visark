@@ -12,7 +12,7 @@ import javafx.application.Application;
 public class VisarkLauncher {
 
     public static void main(String[] args) {
-        Paths.identifier("Kafka-Visark");
+        Paths.identifier(State.PRODUCT);
         System.setProperty("LOG_PATH", Paths.appLog());
         State.args = args;
         Application.launch(VisakApplication.class, args);

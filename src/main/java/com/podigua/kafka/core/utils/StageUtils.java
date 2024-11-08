@@ -107,7 +107,8 @@ public class StageUtils {
 
     public static Stage none() {
         Stage stage = new Stage();
-        stage.initStyle(StageStyle.TRANSPARENT);
+//        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.setResizable(false);
         stage.initOwner(State.stage());
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{

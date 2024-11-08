@@ -11,7 +11,7 @@ import javafx.stage.Stage;
  */
 public class State {
     public static String PRODUCT="Kafka-Visark";
-    public static String VERSION="1.1.6";
+    public static String VERSION="1.1.4";
     static HostServices hostServices;
     static Stage stage;
     static String[] args;
