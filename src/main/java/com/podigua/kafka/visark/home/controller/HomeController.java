@@ -19,6 +19,7 @@ import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
 import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.event.TooltipEvent;
+import com.podigua.kafka.gift.controller.GiftController;
 import com.podigua.kafka.visark.cluster.controller.ClusterController;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.cluster.event.ClusterCloseEvent;
@@ -39,6 +40,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.ColorScheme;
+import javafx.application.ConditionalFeature;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
@@ -48,12 +50,15 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.kordamp.ikonli.antdesignicons.AntDesignIconsFilled;
 import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
 import org.kordamp.ikonli.fluentui.FluentUiRegularMZ;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -73,8 +78,8 @@ import java.util.concurrent.ExecutionException;
  * @date 2024/03/18
  */
 public class HomeController implements Initializable {
-    private final FontIcon moonFontIcon=new FontIcon(FluentUiRegularMZ.WEATHER_MOON_16);
-    private final FontIcon sunFontIcon=new FontIcon(Material2OutlinedMZ.WB_SUNNY);
+    private final FontIcon moonFontIcon = new FontIcon(FluentUiRegularMZ.WEATHER_MOON_16);
+    private final FontIcon sunFontIcon = new FontIcon(Material2OutlinedMZ.WB_SUNNY);
     public Button clusterButton;
     public Button settingButton;
     public CustomTextField filter;
@@ -83,7 +88,7 @@ public class HomeController implements Initializable {
     public AnchorPane leftPane;
     public Button toggleLeftButton;
     public SplitPane splitPane;
-    public SimpleBooleanProperty isLight=new SimpleBooleanProperty();
+    public SimpleBooleanProperty isLight = new SimpleBooleanProperty();
 
     private final Timeline timeline = new Timeline();
     public AnchorPane rootPane;
@@ -100,6 +105,8 @@ public class HomeController implements Initializable {
     public HBox tooltipBox;
     public Button giteeButton;
     public Button themeButton;
+    public BorderPane contentPane;
+    public Button giftButton;
     private FilterableTreeItem<ClusterNode> root;
 
     private final Timeline tooltipTimer = new Timeline(new KeyFrame(Duration.seconds(3)));
@@ -233,10 +240,12 @@ public class HomeController implements Initializable {
         clusterButton.setGraphic(new FontIcon(Material2OutlinedAL.FOLDER));
         settingButton.setGraphic(new FontIcon(Material2OutlinedMZ.SETTINGS));
         giteeButton.setGraphic(new FontIcon(AntDesignIconsOutlined.GITHUB));
+        giftButton.setGraphic(new FontIcon(AntDesignIconsFilled.GIFT));
         toggleLeftButton.setGraphic(new FontIcon(RemixiconAL.LAYOUT_LEFT_LINE));
         clusterButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
         settingButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
         giteeButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
+        giftButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
         toggleLeftButton.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.FLAT);
         resetTheme();
         filter.setLeft(new FontIcon(Material2OutlinedAL.FILTER_ALT));
@@ -280,9 +289,9 @@ public class HomeController implements Initializable {
     }
 
     private void changeThemeIcon(Boolean newValue) {
-        if(newValue){
+        if (newValue) {
             themeButton.setGraphic(moonFontIcon);
-        }else{
+        } else {
             themeButton.setGraphic(sunFontIcon);
         }
     }
@@ -295,9 +304,9 @@ public class HomeController implements Initializable {
             } else {
                 isLight.setValue(true);
             }
-        }else{
+        } else {
             Themes theme = SettingClient.get().getTheme();
-            switch (theme){
+            switch (theme) {
                 case nord_dark:
                 case primer_dark:
                 case cupertino_dark:
@@ -391,10 +400,34 @@ public class HomeController implements Initializable {
 
     public void changeTheme(ActionEvent event) {
         isLight.setValue(!isLight.getValue());
-        if(isLight.getValue()){
+        play();
+        if (isLight.getValue()) {
             Application.setUserAgentStylesheet(Themes.primer_light.theme().getUserAgentStylesheet());
-        }else{
+        } else {
             Application.setUserAgentStylesheet(Themes.primer_dark.theme().getUserAgentStylesheet());
         }
+
+    }
+
+    public static void play() {
+        if (Platform.isSupported(ConditionalFeature.SHAPE_CLIP)) {
+//            Point point = MouseInfo.getPointerInfo().getLocation();
+//            Scene scene = State.stage().getScene();
+//            Circle circle1 = new Circle(point.getX(), point.getY(), 20);
+//            State.pane().setClip(circle1);
+//            Timeline tl = new Timeline(new KeyFrame(Duration.millis(500), new KeyValue(circle1.radiusProperty(), Math.max(scene.getWidth(), scene.getHeight()) * 1.2)));
+//            tl.setOnFinished(event1 -> {
+//                State.pane().setClip(null);
+//            });
+//            tl.play();
+        }
+    }
+
+    public void showGift(ActionEvent event) {
+        FXMLLoader loader = Resources.getLoader("/fxml/gift.fxml");
+        GiftController controller = loader.getController();
+        Parent parent = loader.getRoot();
+        Stage stage = StageUtils.none(parent);
+        stage.show();
     }
 }

@@ -3,6 +3,7 @@ package com.podigua.kafka.core.utils;
 import atlantafx.base.controls.Card;
 import com.podigua.kafka.State;
 import com.podigua.kafka.core.CardHeaderPane;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
@@ -105,12 +106,18 @@ public class StageUtils {
         return show(parent,title,State.stage());
     }
 
-    public static Stage none() {
+    public static Stage none(Node parent) {
         Stage stage = new Stage();
-//        stage.initStyle(StageStyle.TRANSPARENT);
-        stage.setResizable(false);
-        stage.initOwner(State.stage());
+        Card card = new Card();
+        CardHeaderPane header = new CardHeaderPane(stage,null,null);
+        card.setHeader(header);
+        card.setBody(parent);
+        stage.initStyle(StageStyle.TRANSPARENT);
         stage.initModality(Modality.APPLICATION_MODAL);
+        Scene scene = new Scene(card);
+//        scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
+        stage.setScene(scene);
+        stage.initOwner(State.stage());
         stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{
             if(KeyCode.ESCAPE==event.getCode()){
                 stage.close();

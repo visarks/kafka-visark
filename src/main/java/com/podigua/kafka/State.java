@@ -1,6 +1,8 @@
 package com.podigua.kafka;
 
+import com.podigua.kafka.license.License;
 import javafx.application.HostServices;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 /**
@@ -14,8 +16,15 @@ public class State {
     public static String VERSION="1.1.4";
     static HostServices hostServices;
     static Stage stage;
+    static Pane pane;
+    static License license;
     static String[] args;
-
+    public static License license() {
+        return license;
+    }
+    public static Pane pane() {
+        return pane;
+    }
     public static Stage stage() {
         return stage;
     }

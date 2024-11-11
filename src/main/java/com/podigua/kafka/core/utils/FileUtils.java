@@ -1,6 +1,8 @@
 package com.podigua.kafka.core.utils;
 
 import com.podigua.path.Paths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.stream.Collectors;
@@ -12,6 +14,8 @@ import java.util.stream.Collectors;
  * @date 2024/03/18
  */
 public class FileUtils {
+    private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
+
     /**
      * 根路径
      *
@@ -33,7 +37,11 @@ public class FileUtils {
      * @return {@link File}
      */
     public static File file(String file) {
-        return new File(root(), file);
+        File result = new File(root(), file);
+        if (!result.getParentFile().exists()) {
+            result.getParentFile().mkdirs();
+        }
+        return result;
     }
 
     /**
@@ -56,13 +64,32 @@ public class FileUtils {
      * @return {@link File}
      */
     public static String read(File file) {
-        if(file.exists()){
+        if (file.exists()) {
             try (BufferedReader writer = new BufferedReader(new FileReader(file))) {
-                return String.join(System.lineSeparator(), writer.lines().collect(Collectors.toList()));
+                return writer.lines().collect(Collectors.joining(System.lineSeparator()));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return "";
+    }
+
+    public static void copy(InputStream input, FileOutputStream output) {
+        try {
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = input.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+        } catch (Exception e) {
+            logger.error("复制失败", e);
+        } finally {
+            try {
+                input.close();
+                output.close();
+            } catch (IOException e) {
+                logger.error("关闭", e);
+            }
+        }
     }
 }
