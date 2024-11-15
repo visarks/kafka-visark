@@ -3,18 +3,14 @@ package com.podigua.kafka.about;
 import com.podigua.kafka.State;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.visark.setting.SettingClient;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 
 /**
  * Abort 窗格
@@ -60,8 +56,8 @@ public class AbortPane extends BorderPane {
         root.setPadding(new Insets(20));
         Image image = new Image(Resources.getResource("/images/logo.png").toExternalForm());
         ImageView view = new ImageView(image);
-        view.setFitHeight(32);
-        view.setFitWidth(32);
+        view.setFitHeight(46);
+        view.setFitWidth(46);
         root.getChildren().add(view);
 //        root.setStyle("-fx-background-color: -color-bg-inset;");
         this.setTop(root);

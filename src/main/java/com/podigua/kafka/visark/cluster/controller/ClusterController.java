@@ -288,7 +288,7 @@ public class ClusterController implements Initializable {
             ConnectPane pane = new ConnectPane(e -> task.cancel());
             Stage stage = StageUtils.body(pane, parentStage);
             task.setOnSucceeded(e -> {
-                logger.info("连接成功:{}" , property.getServers());
+                logger.info("连接成功:{}", property.getServers());
                 try {
                     AdminManger.put(property.getId(), task.get());
                     MessageUtils.success(SettingClient.bundle().getString("alert.connect.success"));
@@ -302,7 +302,7 @@ public class ClusterController implements Initializable {
                 parentStage.close();
             });
             task.setOnFailed(e -> {
-                logger.warn("连接失败:{}" , property.getServers());
+                logger.warn("连接失败:{}", property.getServers());
                 stage.close();
                 Throwable translate = AdminManger.translate(e.getSource().getException());
                 AlertUtils.error(parentStage, translate.getMessage());
@@ -338,9 +338,14 @@ public class ClusterController implements Initializable {
 
     public void success(ClusterProperty clusterProperty, boolean isAdd) {
         if (isAdd) {
-            TreeItem<ClusterProperty> item = new TreeItem<>(clusterProperty);
+            FilterableTreeItem<ClusterProperty> item = new FilterableTreeItem<>(clusterProperty);
             item.setExpanded(true);
-            this.root.getSourceChildren().add(item);
+            FilterableTreeItem<ClusterProperty> parent = (FilterableTreeItem<ClusterProperty>) tableView.getSelectionModel().getSelectedItem();
+            if (parent != null && parent.getValue() != null) {
+                parent.getSourceChildren().add(item);
+            } else {
+                this.root.getSourceChildren().add(item);
+            }
         } else {
             TreeItem<ClusterProperty> item = tableView.getSelectionModel().getSelectedItem();
             if (item != null) {

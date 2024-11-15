@@ -21,7 +21,7 @@
       <BorderPane fx:id="contentPane" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <left>
             <VBox prefWidth="45">
-               <VBox VBox.vgrow="ALWAYS" alignment="TOP_CENTER" styleClass="bg-default">
+               <VBox VBox.vgrow="ALWAYS" alignment="TOP_CENTER" styleClass="bg-default" style="-fx-padding: 10 0 0 0" spacing="5">
                   <Button fx:id="clusterButton" mnemonicParsing="false" onAction="#showCluster" />
                   <Button fx:id="toggleLeftButton" mnemonicParsing="false" onAction="#toggleLeft" />
                </VBox>
