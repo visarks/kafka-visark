@@ -460,7 +460,6 @@ public class TopicMessagePane extends ContentBorderPane {
         this.clear.setOnAction(event -> {
             AlertUtils.confirm(SettingClient.bundle().getString("message.sure.clear")).ifPresent(t -> {
                 this.rows.clear();
-//                this.filters.clear();
             });
         });
     }
@@ -475,14 +474,14 @@ public class TopicMessagePane extends ContentBorderPane {
                 FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 search.setGraphic(fontIcon);
-//                filter.setDisable(true);
+                filter.setDisable(true);
                 start.setDisable(true);
-//                clear.setDisable(true);
+                clear.setDisable(true);
             } else {
                 search.setGraphic(searchIcon);
                 start.setDisable(false);
-//                filter.setDisable(false);
-//                clear.setDisable(false);
+                filter.setDisable(false);
+                clear.setDisable(false);
             }
         });
         search.setOnAction(event -> {
