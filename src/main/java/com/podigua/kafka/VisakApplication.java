@@ -117,35 +117,20 @@ public class VisakApplication extends Application {
         stage.setMinHeight(766);
         stage.setMinWidth(1216);
         stage.setMaximized(true);
-        stage.getIcons().add(new Image(Resources.getResource("/images/logo.png").toExternalForm()));
-        stage.setOnShown(event -> {
-            if(State.license().expire()){
-                var alert = new Alert(Alert.AlertType.NONE,"许可证已过期,请联系(podigua@126.com)更新换的许可证",ButtonType.OK);
-                alert.initOwner(State.stage());
-                alert.initModality(Modality.APPLICATION_MODAL);
-                alert.showAndWait();
-                Platform.exit();
-            }
-        });
+//        stage.getIcons().add(new Image(Resources.getResource("/images/logo.png").toExternalForm()));
+//        stage.setOnShown(event -> {
+//            if(State.license().expire()){
+//                var alert = new Alert(Alert.AlertType.NONE,"许可证已过期,请联系(podigua@126.com)更新换的许可证",ButtonType.OK);
+//                alert.initOwner(State.stage());
+//                alert.initModality(Modality.APPLICATION_MODAL);
+//                alert.showAndWait();
+//                Platform.exit();
+//            }
+//        });
         Platform.runLater(() -> {
             stage.show();
             stage.requestFocus();
         });
-
-//        if (State.license.expire()) {
-//            new Thread(()->{
-//                try {
-//                    Thread.sleep(3000);
-//                    Platform.runLater(()->{
-//
-//                    });
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//
-//            }).start();
-//        }
-
     }
 
 

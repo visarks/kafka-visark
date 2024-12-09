@@ -7,6 +7,7 @@ import com.podigua.kafka.visark.setting.enums.Themes;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 
 import java.util.Locale;
 
@@ -42,6 +43,9 @@ public class SettingProperty {
         this.openDialog.addListener((observable, oldValue, newValue) -> {
             SettingClient.update(this);
         });
+        this.downloadFolder.addListener((observable, oldValue, newValue) -> {
+            SettingClient.update(this);
+        });
     }
 
     private String id = "1";
@@ -68,6 +72,10 @@ public class SettingProperty {
      * 打开对话框
      */
     private final SimpleBooleanProperty openDialog = new SimpleBooleanProperty(false);
+    /**
+     * 下载文件夹
+     */
+    private final SimpleStringProperty downloadFolder = new SimpleStringProperty("");
 
 
     public Language getLanguage() {
@@ -137,5 +145,18 @@ public class SettingProperty {
 
     public SimpleBooleanProperty openDialog() {
         return openDialog;
+    }
+
+    public void setDownloadFolder(String downloadFolder) {
+        this.downloadFolder.set(downloadFolder);
+    }
+
+
+    public String getDownloadFolder() {
+        return downloadFolder.get();
+    }
+
+    public SimpleStringProperty downloadFolderProperty() {
+        return downloadFolder;
     }
 }

@@ -68,6 +68,7 @@ public class MessageConsumerTask extends QueryTask<Long> {
         this.callback = callback;
     }
 
+
     @Override
     protected Long call() throws Exception {
         ClusterProperty property = AdminManger.property(clusterId());

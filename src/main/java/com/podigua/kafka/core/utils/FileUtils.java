@@ -1,6 +1,7 @@
 package com.podigua.kafka.core.utils;
 
 import com.podigua.path.Paths;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +73,22 @@ public class FileUtils {
             }
         }
         return "";
+    }
+
+    public static File guess(File folder, String filename) {
+        File target = new File(folder, filename);
+        if (!target.exists()) {
+            return target;
+        }
+        String name = FilenameUtils.getBaseName(filename);
+        int index = 1;
+        while (true){
+            File result = new File(folder, name+"-"+(index++)+"."+FilenameUtils.getExtension(filename));
+            if (!result.exists()) {
+                return result;
+            }
+        }
+
     }
 
     public static void copy(InputStream input, FileOutputStream output) {

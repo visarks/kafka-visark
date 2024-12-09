@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -99,6 +100,7 @@ public class SearchMessageTask extends QueryTask<Long> {
             consumer.assign(offsets.stream().map(Offset::topicPartition).collect(Collectors.toList()));
             for (Offset offset : offsets) {
                 long childStart = System.currentTimeMillis();
+                logger.info("子任务开始查询,topic:" + offset.topicPartition.topic() + ",partition:" + offset.topicPartition.partition() + ",start:" + offset.start() + ",end:" + offset.end());
                 logger.info("子任务开始查询,topic:{},partition:{},start:{},end:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), offset.start(), offset.end());
                 consumer.seek(offset.topicPartition, offset.start);
                 exit:
@@ -116,10 +118,11 @@ public class SearchMessageTask extends QueryTask<Long> {
                         }
                     }
                 }
+                logger.info("子任务查询结束,topic:" + offset.topicPartition.topic() + ",partition:" + offset.topicPartition.partition() + ",耗时:" + (System.currentTimeMillis() - childStart));
                 logger.info("子任务查询结束,topic{},partition:{},耗时:{}" ,offset.topicPartition.topic() ,offset.topicPartition.partition(), (System.currentTimeMillis() - childStart));
             }
         }
-        logger.info("总任务查询完成,topic:{},总数:{},耗时:{}" ,topic,counts.get(), (System.currentTimeMillis() - start));
+        logger.info("总任务查询完成,topic:{},总数:{},耗时:{}", topic, counts.get(), (System.currentTimeMillis() - start));
         return counts.get();
     }
 

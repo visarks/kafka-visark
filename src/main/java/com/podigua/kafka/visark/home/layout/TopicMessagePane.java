@@ -3,6 +3,7 @@ package com.podigua.kafka.visark.home.layout;
 import atlantafx.base.controls.CustomTextField;
 import atlantafx.base.theme.Styles;
 import atlantafx.base.theme.Tweaks;
+import com.podigua.kafka.State;
 import com.podigua.kafka.admin.Partition;
 import com.podigua.kafka.admin.QueryParams;
 import com.podigua.kafka.admin.TopicOffset;
@@ -17,34 +18,50 @@ import com.podigua.kafka.visark.home.control.DateTimePicker;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.entity.Message;
 import com.podigua.kafka.visark.home.entity.TotalDetails;
+import com.podigua.kafka.visark.home.task.ExcelOutputTask;
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.podigua.path.Paths;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleLongProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
+import javafx.util.Duration;
+import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material.Material;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static javafx.geometry.Orientation.VERTICAL;
 
@@ -97,6 +114,7 @@ public class TopicMessagePane extends ContentBorderPane {
      */
     private final Button refresh = new Button();
     private final Tooltip refreshTooltip = new Tooltip(SettingClient.bundle().getString("message.refresh"));
+    private final Tooltip downloadTooltip = new Tooltip(SettingClient.bundle().getString("message.download"));
     private final Tooltip messageTooltip = new Tooltip(SettingClient.bundle().getString("max.messages"));
 
     /**
@@ -124,12 +142,18 @@ public class TopicMessagePane extends ContentBorderPane {
 
 
     private final DateTimePicker picker = new DateTimePicker();
+    private ExcelOutputTask downloadTask;
+    private final Button download = new Button();
+
+    private final SimpleBooleanProperty downloading = new SimpleBooleanProperty(false);
+    private final FontIcon downloadIcon = new FontIcon(Material.FILE_DOWNLOAD);
+    private final FontIcon downloadStopIcon = new FontIcon(Material2MZ.STOP);
 
     private final TableView<Message> table = new TableView<>();
 
     private final ObservableList<Message> rows = FXCollections.observableArrayList();
 
-    private final FilteredList<Message> filters = new FilteredList<>(rows);
+    private final FilteredList<Message> filters = new FilteredList<>(rows,p->true);
 
     private SearchMessageTask searchTask;
     private MessageConsumerTask consumerTask;
@@ -216,6 +240,7 @@ public class TopicMessagePane extends ContentBorderPane {
         ThreadUtils.start(partitionTask);
     }
 
+    private final Object lock=new Object();
     private void setTable() {
         this.table.setItems(filters);
         filter.setPromptText(Messages.filter());
@@ -223,12 +248,20 @@ public class TopicMessagePane extends ContentBorderPane {
         FontIcon icon = NodeUtils.clear(() -> filter.setText(""));
         filter.setRight(icon);
         filter.textProperty().addListener((observable, oldValue, newValue) -> {
-            filters.predicateProperty().set(node -> {
-                if (node == null || !StringUtils.hasText(newValue)) {
-                    return true;
-                }
-                return node.value().get().toLowerCase().contains(newValue.toLowerCase());
-            });
+           synchronized (lock){
+               Platform.runLater(()->{
+                   try{
+                       this.filters.predicateProperty().set(node -> {
+                           if (node == null || !StringUtils.hasText(newValue)) {
+                               return true;
+                           }
+                           return node.value().get().toLowerCase().contains(newValue.toLowerCase());
+                       });
+                   }catch (Exception e){
+                       logger.warn("设置过滤器出错",e);
+                   }
+               });
+           }
         });
         TableColumn<Message, String> priority = new TableColumn<>("#");
         priority.setCellFactory(col -> {
@@ -294,6 +327,75 @@ public class TopicMessagePane extends ContentBorderPane {
         onSearch();
         onClear();
         onStart();
+        onDownload();
+    }
+
+    private void onDownload() {
+        downloading.addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                download.setGraphic(downloadStopIcon);
+            } else {
+                download.setGraphic(downloadIcon);
+            }
+        });
+        Button openFolder = new Button(SettingClient.bundle().getString("open.folder"));
+        openFolder.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT);
+        openFolder.setGraphic(new FontIcon(Material.FOLDER_OPEN));
+        Button openFile = new Button(SettingClient.bundle().getString("open.file"));
+        openFile.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT);
+        openFile.setGraphic(new FontIcon(AntDesignIconsOutlined.FILE_EXCEL));
+        download.setOnAction(event -> {
+            if (CollectionUtils.isEmpty(rows)) {
+                MessageUtils.warning(SettingClient.bundle().getString("data.empty"));
+                return;
+            }
+            String folder = SettingClient.get().getDownloadFolder();
+            File target = null;
+            String filename = this.value().label() + ".xlsx";
+            if (StringUtils.hasText(folder) && new File(folder).exists()) {
+                target = FileUtils.guess(new File(folder), filename);
+            } else {
+                FileChooser chooser = new FileChooser();
+                chooser.setInitialDirectory(new File(Paths.downloads()));
+                chooser.setInitialFileName(filename);
+                target = chooser.showSaveDialog(State.stage());
+            }
+            if (target != null) {
+                downloading.setValue(!downloading.get());
+                if (downloading.get()) {
+                    downloadTask = new ExcelOutputTask(target, new ArrayList<>(rows));
+                    File finalTarget = target;
+                    downloadTask.setOnSucceeded(e -> {
+                        downloading.setValue(false);
+                        Boolean success = (Boolean) e.getSource().getValue();
+                        if(success){
+                            openFolder.setOnAction(e1 -> Desktop.getDesktop().browseFileDirectory(finalTarget));
+                            openFile.setOnAction(e1 -> {
+                                try {
+                                    Desktop.getDesktop().open(finalTarget);
+                                } catch (IOException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            });
+                            MessageUtils.success(SettingClient.bundle().getString("download.success"), Duration.seconds(5), openFolder, openFile);
+                        }else {
+                            MessageUtils.success(SettingClient.bundle().getString("download.cancel"));
+                        }
+                    });
+                    downloadTask.setOnFailed(handler -> {
+                        downloading.setValue(false);
+                        MessageUtils.error(SettingClient.bundle().getString("download.fail"));
+                    });
+                    new Thread(downloadTask).start();
+                } else {
+                    if (downloadTask != null && downloadTask.isRunning()) {
+                        downloadTask.shutdown();
+                    }
+                }
+
+
+            }
+        });
     }
 
     private void onStart() {
@@ -302,14 +404,14 @@ public class TopicMessagePane extends ContentBorderPane {
                 FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 start.setGraphic(fontIcon);
-                filter.setDisable(true);
+//                filter.setDisable(true);
                 search.setDisable(true);
-                clear.setDisable(true);
+//                clear.setDisable(true);
             } else {
                 start.setGraphic(new FontIcon(Material2MZ.PLAY_ARROW));
-                search.setDisable(false);
+//                search.setDisable(false);
                 filter.setDisable(false);
-                clear.setDisable(false);
+//                clear.setDisable(false);
             }
         });
         start.setOnAction(event -> {
@@ -330,7 +432,9 @@ public class TopicMessagePane extends ContentBorderPane {
             var messageCounts = new AtomicLong(0);
             consumerTask = new MessageConsumerTask(node.clusterId(), node.label(), offsetType.name(), record -> {
                 var message = new Message(record);
-                this.rows.add(0, message);
+                synchronized (lock){
+                    Platform.runLater(()-> this.rows.addFirst(message));
+                }
                 messageCounts.getAndIncrement();
             });
             long start = System.currentTimeMillis();
@@ -356,7 +460,7 @@ public class TopicMessagePane extends ContentBorderPane {
         this.clear.setOnAction(event -> {
             AlertUtils.confirm(SettingClient.bundle().getString("message.sure.clear")).ifPresent(t -> {
                 this.rows.clear();
-                this.filters.clear();
+//                this.filters.clear();
             });
         });
     }
@@ -371,14 +475,14 @@ public class TopicMessagePane extends ContentBorderPane {
                 FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 search.setGraphic(fontIcon);
-                filter.setDisable(true);
+//                filter.setDisable(true);
                 start.setDisable(true);
-                clear.setDisable(true);
+//                clear.setDisable(true);
             } else {
                 search.setGraphic(searchIcon);
                 start.setDisable(false);
-                filter.setDisable(false);
-                clear.setDisable(false);
+//                filter.setDisable(false);
+//                clear.setDisable(false);
             }
         });
         search.setOnAction(event -> {
@@ -471,13 +575,13 @@ public class TopicMessagePane extends ContentBorderPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         setAddMessagePane();
-        tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, spacer, counts);
+        tool.getItems().addAll(start, search, clear, add, new Separator(VERTICAL), earliest, latest, new Separator(VERTICAL), message, datetime, offset, new Separator(VERTICAL), partitions, new Separator(VERTICAL), dynamic, download, spacer, counts);
         header.getChildren().addAll(filters, tool);
         this.setTop(header);
     }
 
     private void setAddMessagePane() {
-        this.add.setOnAction((event)->{
+        this.add.setOnAction((event) -> {
             AddMessagePane pane = new AddMessagePane(this.node.clusterId(), this.node.label());
             StageUtils.show(pane, SettingClient.bundle().getString("message.sender"), Modality.NONE);
         });
@@ -520,20 +624,24 @@ public class TopicMessagePane extends ContentBorderPane {
 
     private void setButton() {
         search.setGraphic(searchIcon);
-        search.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
+        search.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
         search.setTooltip(searchTooltip);
 
         clear.setGraphic(new FontIcon(Material2MZ.REMOVE_CIRCLE_OUTLINE));
-        clear.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
+        clear.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.DANGER);
         clear.setTooltip(clearTooltip);
 
         add.setGraphic(new FontIcon(Material2AL.ADD_CIRCLE_OUTLINE));
-        add.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
+        add.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
         add.setTooltip(addTooltip);
 
         refresh.setGraphic(new FontIcon(Material2MZ.REFRESH));
-        refresh.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
+        refresh.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
         refresh.setTooltip(refreshTooltip);
+
+        download.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
+        download.setTooltip(downloadTooltip);
+        download.setGraphic(downloadIcon);
     }
 
     private void setStarted() {

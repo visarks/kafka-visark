@@ -19,10 +19,17 @@ import java.util.List;
  * @date 2024/03/25
  */
 public class Message {
+    private final long millis;
+
+    public Long millis() {
+        return this.millis;
+    }
+
     public Message(ConsumerRecord<byte[], byte[]> record) {
         this.topic.set(record.topic());
         this.partition.set(record.partition());
         this.offset.set(record.offset());
+        this.millis = record.timestamp();
         this.timestamp.set(LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         if (record.key() != null) {
             this.key.set(new String(record.key()));
