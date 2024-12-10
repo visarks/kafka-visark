@@ -404,14 +404,10 @@ public class TopicMessagePane extends ContentBorderPane {
                 FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 start.setGraphic(fontIcon);
-//                filter.setDisable(true);
                 search.setDisable(true);
-//                clear.setDisable(true);
             } else {
                 start.setGraphic(new FontIcon(Material2MZ.PLAY_ARROW));
-//                search.setDisable(false);
-                filter.setDisable(false);
-//                clear.setDisable(false);
+                search.setDisable(false);
             }
         });
         start.setOnAction(event -> {
@@ -474,14 +470,10 @@ public class TopicMessagePane extends ContentBorderPane {
                 FontIcon fontIcon = new FontIcon(Material2MZ.STOP);
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 search.setGraphic(fontIcon);
-//                filter.setDisable(true);
                 start.setDisable(true);
-//                clear.setDisable(true);
             } else {
                 search.setGraphic(searchIcon);
                 start.setDisable(false);
-//                filter.setDisable(false);
-//                clear.setDisable(false);
             }
         });
         search.setOnAction(event -> {

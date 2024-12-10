@@ -35,11 +35,12 @@ public class NamedThreadFactory implements ThreadFactory {
     /**
      * 构造
      *
-     * @param prefix   线程名前缀
+     * @param prefix 线程名前缀
      */
     public NamedThreadFactory(String prefix) {
         this(prefix, null, Boolean.FALSE);
     }
+
     /**
      * 构造
      *
@@ -64,16 +65,15 @@ public class NamedThreadFactory implements ThreadFactory {
     /**
      * 构造
      *
-     * @param prefix      线程名前缀
-     * @param group 线程组，可以为null
-     * @param isDaemon    是否守护线程
-     * @param handler     未捕获异常处理
+     * @param prefix   线程名前缀
+     * @param group    线程组，可以为null
+     * @param isDaemon 是否守护线程
+     * @param handler  未捕获异常处理
      */
     public NamedThreadFactory(String prefix, ThreadGroup group, boolean isDaemon, Thread.UncaughtExceptionHandler handler) {
         this.prefix = prefix;
         if (null == group) {
-            SecurityManager s = System.getSecurityManager();
-            group = (null != s) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+            group = Thread.currentThread().getThreadGroup();
         }
         this.group = group;
         this.isDaemon = isDaemon;
