@@ -60,8 +60,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static javafx.geometry.Orientation.VERTICAL;
 
@@ -153,7 +151,7 @@ public class TopicMessagePane extends ContentBorderPane {
 
     private final ObservableList<Message> rows = FXCollections.observableArrayList();
 
-    private final FilteredList<Message> filters = new FilteredList<>(rows,p->true);
+    private final FilteredList<Message> filters = new FilteredList<>(rows, p -> true);
 
     private SearchMessageTask searchTask;
     private MessageConsumerTask consumerTask;
@@ -240,7 +238,8 @@ public class TopicMessagePane extends ContentBorderPane {
         ThreadUtils.start(partitionTask);
     }
 
-    private final Object lock=new Object();
+    private final Object lock = new Object();
+
     private void setTable() {
         this.table.setItems(filters);
         filter.setPromptText(Messages.filter());
@@ -248,20 +247,20 @@ public class TopicMessagePane extends ContentBorderPane {
         FontIcon icon = NodeUtils.clear(() -> filter.setText(""));
         filter.setRight(icon);
         filter.textProperty().addListener((observable, oldValue, newValue) -> {
-           synchronized (lock){
-               Platform.runLater(()->{
-                   try{
-                       this.filters.predicateProperty().set(node -> {
-                           if (node == null || !StringUtils.hasText(newValue)) {
-                               return true;
-                           }
-                           return node.value().get().toLowerCase().contains(newValue.toLowerCase());
-                       });
-                   }catch (Exception e){
-                       logger.warn("设置过滤器出错",e);
-                   }
-               });
-           }
+            synchronized (lock) {
+                Platform.runLater(() -> {
+                    try {
+                        this.filters.predicateProperty().set(node -> {
+                            if (node == null || !StringUtils.hasText(newValue)) {
+                                return true;
+                            }
+                            return node.value().get().toLowerCase().contains(newValue.toLowerCase());
+                        });
+                    } catch (Exception e) {
+                        logger.warn("设置过滤器出错", e);
+                    }
+                });
+            }
         });
         TableColumn<Message, String> priority = new TableColumn<>("#");
         priority.setCellFactory(col -> {
@@ -368,7 +367,7 @@ public class TopicMessagePane extends ContentBorderPane {
                     downloadTask.setOnSucceeded(e -> {
                         downloading.setValue(false);
                         Boolean success = (Boolean) e.getSource().getValue();
-                        if(success){
+                        if (success) {
                             openFolder.setOnAction(e1 -> Desktop.getDesktop().browseFileDirectory(finalTarget));
                             openFile.setOnAction(e1 -> {
                                 try {
@@ -378,7 +377,7 @@ public class TopicMessagePane extends ContentBorderPane {
                                 }
                             });
                             MessageUtils.success(SettingClient.bundle().getString("download.success"), Duration.seconds(5), openFolder, openFile);
-                        }else {
+                        } else {
                             MessageUtils.success(SettingClient.bundle().getString("download.cancel"));
                         }
                     });
@@ -405,9 +404,13 @@ public class TopicMessagePane extends ContentBorderPane {
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 start.setGraphic(fontIcon);
                 search.setDisable(true);
+                filter.setDisable(true);
+                clear.setDisable(true);
             } else {
                 start.setGraphic(new FontIcon(Material2MZ.PLAY_ARROW));
                 search.setDisable(false);
+                filter.setDisable(false);
+                clear.setDisable(false);
             }
         });
         start.setOnAction(event -> {
@@ -428,8 +431,8 @@ public class TopicMessagePane extends ContentBorderPane {
             var messageCounts = new AtomicLong(0);
             consumerTask = new MessageConsumerTask(node.clusterId(), node.label(), offsetType.name(), record -> {
                 var message = new Message(record);
-                synchronized (lock){
-                    Platform.runLater(()-> this.rows.addFirst(message));
+                synchronized (lock) {
+                    Platform.runLater(() -> this.rows.addFirst(message));
                 }
                 messageCounts.getAndIncrement();
             });
@@ -471,9 +474,13 @@ public class TopicMessagePane extends ContentBorderPane {
                 fontIcon.getStyleClass().add(Styles.DANGER);
                 search.setGraphic(fontIcon);
                 start.setDisable(true);
+                filter.setDisable(true);
+                clear.setDisable(true);
             } else {
                 search.setGraphic(searchIcon);
                 start.setDisable(false);
+                filter.setDisable(false);
+                clear.setDisable(false);
             }
         });
         search.setOnAction(event -> {
@@ -615,22 +622,22 @@ public class TopicMessagePane extends ContentBorderPane {
 
     private void setButton() {
         search.setGraphic(searchIcon);
-        search.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
+        search.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT, Styles.ACCENT);
         search.setTooltip(searchTooltip);
 
         clear.setGraphic(new FontIcon(Material2MZ.REMOVE_CIRCLE_OUTLINE));
-        clear.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.DANGER);
+        clear.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT, Styles.DANGER);
         clear.setTooltip(clearTooltip);
 
         add.setGraphic(new FontIcon(Material2AL.ADD_CIRCLE_OUTLINE));
-        add.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
+        add.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT, Styles.ACCENT);
         add.setTooltip(addTooltip);
 
         refresh.setGraphic(new FontIcon(Material2MZ.REFRESH));
-        refresh.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
+        refresh.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT, Styles.ACCENT);
         refresh.setTooltip(refreshTooltip);
 
-        download.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT,Styles.ACCENT);
+        download.getStyleClass().addAll(Styles.FONT_ICON, Styles.FLAT, Styles.ACCENT);
         download.setTooltip(downloadTooltip);
         download.setGraphic(downloadIcon);
     }
