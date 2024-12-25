@@ -1,4 +1,12 @@
-> 本软件使用`javafx`开发的 kafka工具
+
+<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">Kafka-Visark</h1>
+<h4 align="center">跨平台 kafka 客户端</h4>
+<p align="center">
+	<a href='https://gitee.com/podigua/kafka-visark/stargazers'><img src='https://gitee.com/podigua/kafka-visark/badge/star.svg?theme=dark' alt='star'></img></a>
+    <a href='https://gitee.com/podigua/kafka-visark/members'><img src='https://gitee.com/podigua/kafka-visark/badge/fork.svg?theme=dark' alt='fork'></img></a>
+</p>
+
+> 本软件使用`javafx`开发的 kafka 跨平台客户端
 
 # 下载地址
 链接: https://pan.baidu.com/s/1yBg2se16eTnodWH_cDU7Yw?pwd=y2h8 提取码: y2h8
