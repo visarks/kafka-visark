@@ -373,6 +373,7 @@ public class TopicMessagePane extends ContentBorderPane {
                                 try {
                                     Desktop.getDesktop().open(finalTarget);
                                 } catch (IOException ex) {
+                                    logger.error("打开文件失败",e);
                                     throw new RuntimeException(ex);
                                 }
                             });
@@ -383,7 +384,10 @@ public class TopicMessagePane extends ContentBorderPane {
                     });
                     downloadTask.setOnFailed(handler -> {
                         downloading.setValue(false);
+                        Throwable exception = handler.getSource().getException();
+                        logger.error("下载失败", exception);
                         MessageUtils.error(SettingClient.bundle().getString("download.fail"));
+                        throw new RuntimeException(exception);
                     });
                     new Thread(downloadTask).start();
                 } else {
