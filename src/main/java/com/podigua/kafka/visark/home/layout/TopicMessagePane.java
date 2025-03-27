@@ -395,8 +395,6 @@ public class TopicMessagePane extends ContentBorderPane {
                         downloadTask.shutdown();
                     }
                 }
-
-
             }
         });
     }

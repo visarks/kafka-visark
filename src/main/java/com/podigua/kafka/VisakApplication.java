@@ -9,6 +9,7 @@ import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
 import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.license.LicenseUtils;
+import com.podigua.kafka.updater.Updater;
 import com.podigua.kafka.visark.home.controller.HomeController;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.kafka.visark.setting.ThemeChangeEvent;
@@ -22,12 +23,11 @@ import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Optional;
 
 
 /**
@@ -134,16 +133,28 @@ public class VisakApplication extends Application {
     }
 
 
-    private static void initMenu() {
+    private void initMenu() {
         AbortPane pane = new AbortPane();
         Stage stage = StageUtils.none(pane);
         MenuItem about = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createAboutMenuItem(State.PRODUCT, stage);
         MenuItem hide = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createHideMenuItem(State.PRODUCT);
         MenuItem hideOthers = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createHideOthersMenuItem();
+        MenuItem setting = new MenuItem(SettingClient.bundle().getString("setting.title"));
+        setting.setOnAction(event -> {
+            Windows.setting();
+        });
         MenuItem quit = MenuToolkit.toolkit(SettingClient.bundle().getLocale()).createQuitMenuItem(State.PRODUCT);
         Menu menu = new Menu();
-        menu.getItems().addAll(about, new SeparatorMenuItem(), hide, hideOthers, new SeparatorMenuItem(), quit);
+        menu.getItems().addAll(about, new SeparatorMenuItem(), checkUpdater(), setting, new SeparatorMenuItem(), hide, hideOthers, new SeparatorMenuItem(), quit);
         MenuToolkit.toolkit(SettingClient.bundle().getLocale()).setApplicationMenu(menu);
+    }
+
+    private MenuItem checkUpdater() {
+        MenuItem updater = new MenuItem(SettingClient.bundle().getString("updater.check"));
+        updater.setOnAction(event -> {
+            Updater.check();
+        });
+        return updater;
     }
 
     @Override

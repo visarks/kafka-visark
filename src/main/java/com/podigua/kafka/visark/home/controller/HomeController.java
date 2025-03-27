@@ -4,6 +4,7 @@ import atlantafx.base.controls.CustomTextField;
 import atlantafx.base.controls.Notification;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.State;
+import com.podigua.kafka.Windows;
 import com.podigua.kafka.admin.AdminManger;
 import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.admin.task.QueryConsumersTask;
@@ -50,10 +51,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
@@ -361,10 +359,7 @@ public class HomeController implements Initializable {
     }
 
     public void showSetting(ActionEvent event) {
-        FXMLLoader loader = Resources.getLoader("/fxml/setting.fxml");
-        Parent parent = loader.getRoot();
-        StageUtils.show(parent, SettingClient.bundle().getString("setting.title"));
-
+        Windows.setting();
     }
 
     public void showCluster(ActionEvent event) {
