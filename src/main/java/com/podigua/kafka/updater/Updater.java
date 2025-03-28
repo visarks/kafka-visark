@@ -7,6 +7,7 @@ import com.podigua.kafka.core.utils.FileUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.podigua.path.utils.SystemUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,19 +55,34 @@ public class Updater {
     public static void check() {
         try {
             Releases releases = getReleases();
-            if (isNewVersion(version(State.VERSION), version(releases.getVersion()))) {
-                StageUtils.none(new UpdatePane(releases)).show();
-//                Notification notification = new Notification(SettingClient.bundle().getString("updater.tooltip"), new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE));
-//                new NoticeEvent(notification).publish();
+            Integer[] latest = version(releases.getVersion());
+            Integer[] current = version(State.VERSION);
+            if (isNewVersion(current, latest)) {
+                Platform platform = getPlatform(releases);
+                if (platform == null) {
+                    MessageUtils.warning(SettingClient.bundle().getString("updater.platform.error"));
+                } else {
+                    StageUtils.none(new UpdatePane(releases)).show();
+                }
             } else {
                 MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
-//                Notification notification = new Notification("待更新", new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE));
-//                new NoticeEvent(notification).publish();
             }
         } catch (Exception e) {
             MessageUtils.error(SettingClient.bundle().getString("updater.error"));
             logger.error("获取版本失败", e);
         }
+    }
+
+    private static Platform getPlatform(Releases releases) {
+        String os = "";
+        if (SystemUtils.IS_OS_MAC) {
+            os = "darwin";
+        } else if (SystemUtils.IS_OS_WINDOWS) {
+            os = "windows";
+        } else if (SystemUtils.IS_OS_LINUX) {
+            os = "linux";
+        }
+        return releases.getPlatforms().get(os + "-" + SystemUtils.OS_ARCH);
     }
 
     private static boolean isNewVersion(Integer[] source, Integer[] target) {
