@@ -8,14 +8,18 @@ import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.path.utils.SystemUtils;
+import javafx.stage.Stage;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -25,8 +29,17 @@ import java.nio.charset.StandardCharsets;
  * @date 2025/03/27
  */
 public class Updater {
-    private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
-    private static final String URL = "http://localhost:8080/releases";
+    private static final Logger logger = LoggerFactory.getLogger(Updater.class);
+    private static final String URL = "http://localhost:8080/releases/kafka-visark";
+    public static final OkHttpClient CLIENT = new OkHttpClient();
+
+    public static void main(String[] args) throws IOException {
+        String url = "http://localhost:8080/releases/kafka-visark/darwin-x86_64";
+        Request request = new Request.Builder().url(url).get().build();
+        Response response = CLIENT.newCall(request).execute();
+        ResponseBody body = response.body();
+        System.out.println("");
+    }
 
     /**
      * 获取版本
@@ -35,22 +48,25 @@ public class Updater {
      */
     public static Releases getReleases() {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            URL url = new URL(URL);
-            URLConnection connection = url.openConnection();
-            InputStream stream = connection.getInputStream();
+            Request request = new Request.Builder().url(URL).get().build();
+            Response response = CLIENT.newCall(request).execute();
+            ResponseBody body = response.body();
+            InputStream stream = body.byteStream();
             IOUtils.copy(stream, output);
             String content = new String(output.toByteArray(), StandardCharsets.UTF_8);
+            logger.info("获取版本:{}", content);
             IOUtils.closeQuietly(stream);
-            return BeanUtils.readValue(content, new TypeReference<Releases>() {
+            Result<Releases> result = BeanUtils.readValue(content, new TypeReference<Result<Releases>>() {
             });
+            if (result != null && Boolean.TRUE.equals(result.getSuccess())) {
+                return result.getData();
+            }
+            return null;
         } catch (Exception e) {
             throw new RuntimeException();
         }
     }
 
-    public static void main(String[] args) {
-        check();
-    }
 
     public static void check() {
         try {
@@ -62,7 +78,10 @@ public class Updater {
                 if (platform == null) {
                     MessageUtils.warning(SettingClient.bundle().getString("updater.platform.error"));
                 } else {
-                    StageUtils.none(new UpdatePane(releases)).show();
+                    UpdatePane pane = new UpdatePane(releases, platform);
+                    Stage stage = StageUtils.none(pane);
+                    pane.setStage(stage);
+                    stage.show();
                 }
             } else {
                 MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
@@ -113,9 +132,5 @@ public class Updater {
             }
         }
         return Integer.parseInt(result.toString());
-    }
-
-    public static void download(Releases releases) {
-
     }
 }

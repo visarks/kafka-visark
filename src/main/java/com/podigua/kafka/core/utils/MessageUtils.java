@@ -26,11 +26,11 @@ public class MessageUtils {
      *
      * @param message 消息
      */
-    public static void success(String message) {
-        success(message, Duration.seconds(3),null);
+    public static Notification success(String message) {
+        return success(message, Duration.seconds(3),null);
     }
-    public static void success(String message,Duration duration) {
-        success(message, duration,null);
+    public static Notification success(String message,Duration duration) {
+         return   success(message, duration,null);
     }
     /**
      * 显示成功消息
@@ -63,7 +63,7 @@ public class MessageUtils {
      *
      * @param message 消息
      */
-    public static void success(String message, Duration duration,Button... buttons) {
+    public static Notification success(String message, Duration duration,Button... buttons) {
         final var notice = new Notification(message, new FontIcon(Material2OutlinedAL.CHECK_CIRCLE_OUTLINE));
         notice.setPrefWidth(WIDTH);
         notice.getStyleClass().addAll(Styles.ACCENT, Styles.ELEVATED_1);
@@ -80,6 +80,7 @@ public class MessageUtils {
             notice.setPrimaryActions(buttons);
         }
         new NoticeEvent(notice).duration(duration).publish();
+        return notice;
     }
 
     /**
