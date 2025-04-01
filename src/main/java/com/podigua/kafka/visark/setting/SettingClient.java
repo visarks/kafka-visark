@@ -22,8 +22,8 @@ import org.slf4j.LoggerFactory;
  * @date 2024/03/18
  */
 public class SettingClient {
-    private final static String INSERT = "insert into setting(id,language,theme,timeout,autoTheme,openDialog,downloadFolder) values ('1','%s','%s',%d,%b,%b,'%s')";
-    private final static String UPDATE = "update setting set language='%s',theme='%s',timeout=%d,autoTheme=%b,openDialog=%b,downloadFolder='%s' where id='1'";
+    private final static String INSERT = "insert into setting(id,language,theme,timeout,autoTheme,openDialog,downloadFolder,autoUpdater) values ('1','%s','%s',%d,%b,%b,'%s',%b)";
+    private final static String UPDATE = "update setting set language='%s',theme='%s',timeout=%d,autoTheme=%b,openDialog=%b,downloadFolder='%s',autoUpdater=%b where id='1'";
     private final static Logger logger = LoggerFactory.getLogger(SettingClient.class);
     private final static Debounce DEBOUNCE = new Debounce(Duration.ofMillis(100));
     public static ObservableList<Themes> THEMES = FXCollections.observableArrayList(
@@ -49,7 +49,7 @@ public class SettingClient {
         SettingProperty property = DatasourceUtils.query4Object("select * from setting where id='1'", SettingProperty.class);
         if (property == null) {
             property = new SettingProperty();
-            DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name(),property.getTimeout(),property.getAutoTheme(),property.getOpenDialog(),property.getDownloadFolder()));
+            DatasourceUtils.execute(String.format(INSERT, property.getLanguage().name(), property.getTheme().name(),property.getTimeout(),property.getAutoTheme(),property.getOpenDialog(),property.getDownloadFolder(),property.getAutoUpdater()));
         }
         INSTANCE = property;
         Locale.setDefault(INSTANCE.getLanguage().locale());
@@ -78,7 +78,7 @@ public class SettingClient {
         DEBOUNCE.execute(() -> {
             String language = setting.getLanguage().name();
             String theme = setting.getTheme().name();
-            DatasourceUtils.execute(String.format(UPDATE, language, theme,setting.getTimeout(),setting.getAutoTheme(),setting.getOpenDialog(),setting.getDownloadFolder()));
+            DatasourceUtils.execute(String.format(UPDATE, language, theme,setting.getTimeout(),setting.getAutoTheme(),setting.getOpenDialog(),setting.getDownloadFolder(),setting.getAutoUpdater()));
             logger.info("更新配置:{}",setting);
         });
     }

@@ -40,6 +40,9 @@ public class SettingProperty {
             SettingClient.update(this);
             new ThemeChangeEvent().publish();
         });
+        this.autoUpdater.addListener((observable, oldValue, newValue) -> {
+            SettingClient.update(this);
+        });
         this.openDialog.addListener((observable, oldValue, newValue) -> {
             SettingClient.update(this);
         });
@@ -68,6 +71,11 @@ public class SettingProperty {
      * 自动主题
      */
     private final SimpleBooleanProperty autoTheme = new SimpleBooleanProperty(false);
+
+    /**
+     * 自动主题
+     */
+    private final SimpleBooleanProperty autoUpdater = new SimpleBooleanProperty(false);
     /**
      * 打开对话框
      */
@@ -158,5 +166,17 @@ public class SettingProperty {
 
     public SimpleStringProperty downloadFolderProperty() {
         return downloadFolder;
+    }
+
+    public Boolean getAutoUpdater() {
+        return autoUpdater.get();
+    }
+
+    public void setAutoUpdater(Boolean autoUpdater) {
+        this.autoUpdater.set(autoUpdater);
+    }
+
+    public SimpleBooleanProperty autoUpdater() {
+        return autoUpdater;
     }
 }

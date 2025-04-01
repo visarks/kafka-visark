@@ -5,15 +5,12 @@ import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.core.event.NoticeCloseEvent;
 import com.podigua.kafka.core.utils.MessageUtils;
-import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -22,7 +19,6 @@ import javafx.util.Duration;
 
 import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 
 public class UpdatePane extends BorderPane {
     private final Releases releases;
@@ -31,6 +27,7 @@ public class UpdatePane extends BorderPane {
     private final UpdateTask task;
     private final Label label = new Label();
     private Stage stage;
+    private final Button cancel = new Button(SettingClient.bundle().getString("updater.cancel"));
 
     public UpdatePane(Releases releases, Platform platform) {
         this.releases = releases;
@@ -38,43 +35,58 @@ public class UpdatePane extends BorderPane {
         this.setPrefSize(320, 180);
         center();
         setBottom();
+        onError();
         onSuccess();
+        onCancel();
+    }
+
+    private void onCancel() {
+        this.task.setOnCancelled(event -> {
+            MessageUtils.success(SettingClient.bundle().getString("updater.cancel.tooltip"));
+        });
+    }
+
+    private void onError() {
+        this.task.setOnFailed(handler -> {
+            Throwable exception = handler.getSource().getException();
+            if (exception != null) {
+                MessageUtils.error(exception.getMessage());
+            }
+            this.stage.close();
+        });
     }
 
     private void onSuccess() {
         this.task.setOnSucceeded(event -> {
             this.stage.close();
-            File file= (File) event.getSource().getValue();
+            File file = (File) event.getSource().getValue();
             Button install = new Button(SettingClient.bundle().getString("updater.install"));
             install.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
             Button cancel = new Button(SettingClient.bundle().getString("updater.cancel"));
             cancel.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
             Notification notice = MessageUtils.success(SettingClient.bundle().getString("download.success"), Duration.ZERO, install, cancel);
-            install.setOnAction(e->{
+            install.setOnAction(e -> {
                 new NoticeCloseEvent(notice).publish();
                 Desktop.getDesktop().browseFileDirectory(file);
                 System.exit(0);
             });
-            cancel.setOnAction(e-> new NoticeCloseEvent(notice).publish());
+            cancel.setOnAction(e -> new NoticeCloseEvent(notice).publish());
         });
     }
 
     private void setBottom() {
         HBox box = gethBox();
+        box.setSpacing(10);
+        box.setAlignment(Pos.CENTER);
         Button download = new Button(SettingClient.bundle().getString("updater.download"));
-        Button cancel = new Button(SettingClient.bundle().getString("updater.cancel"));
         download.setOnAction(e -> {
-            box.getChildren().clear();
+            box.getChildren().remove(download);
             box.getChildren().add(cancel);
-            download.setVisible(false);
-            cancel.setVisible(true);
             downloadProgress.setVisible(true);
             new Thread(task).start();
         });
-        cancel.setVisible(false);
         cancel.setOnAction(event -> {
-            task.cancel();
-            this.stage.close();
+            getOnClose().run();
         });
         download.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
         cancel.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
@@ -112,5 +124,16 @@ public class UpdatePane extends BorderPane {
 
     public Stage getStage() {
         return stage;
+    }
+
+    public Runnable getOnClose() {
+        return () -> {
+            if (this.task.isRunning()) {
+                task.cancel();
+                this.stage.close();
+            } else {
+                this.stage.close();
+            }
+        };
     }
 }

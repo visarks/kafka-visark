@@ -1,5 +1,7 @@
 package com.podigua.kafka.updater;
 
+import com.podigua.kafka.core.utils.FileUtils;
+import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.path.Paths;
 import javafx.concurrent.Task;
 import okhttp3.Request;
@@ -60,6 +62,12 @@ public class UpdateTask extends Task<File> {
         } catch (IOException e) {
             updateMessage("下载失败：" + e.getMessage());
             throw e;
+        }
+        updateMessage(SettingClient.bundle().getString("updater.verify.signature"));
+        String  signature= FileUtils.sha256(target);
+        if (!platform.getSignature().equals(signature)) {
+            updateMessage(SettingClient.bundle().getString("updater.verify.signature.fail"));
+            throw new RuntimeException(SettingClient.bundle().getString("updater.verify.signature.fail"));
         }
         return target;
     }

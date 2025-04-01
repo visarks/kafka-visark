@@ -48,13 +48,14 @@ public class Updater {
      */
     public static Releases getReleases() {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            logger.info("获取版本,url:{}",URL);
             Request request = new Request.Builder().url(URL).get().build();
             Response response = CLIENT.newCall(request).execute();
             ResponseBody body = response.body();
             InputStream stream = body.byteStream();
             IOUtils.copy(stream, output);
             String content = new String(output.toByteArray(), StandardCharsets.UTF_8);
-            logger.info("获取版本:{}", content);
+            logger.info("获取版本完成:{}", content);
             IOUtils.closeQuietly(stream);
             Result<Releases> result = BeanUtils.readValue(content, new TypeReference<Result<Releases>>() {
             });
@@ -79,7 +80,7 @@ public class Updater {
                     MessageUtils.warning(SettingClient.bundle().getString("updater.platform.error"));
                 } else {
                     UpdatePane pane = new UpdatePane(releases, platform);
-                    Stage stage = StageUtils.none(pane);
+                    Stage stage = StageUtils.none(pane,pane.getOnClose());
                     pane.setStage(stage);
                     stage.show();
                 }

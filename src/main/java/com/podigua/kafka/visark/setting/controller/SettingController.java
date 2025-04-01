@@ -2,6 +2,7 @@ package com.podigua.kafka.visark.setting.controller;
 
 import atlantafx.base.controls.CustomTextField;
 import atlantafx.base.controls.Tile;
+import atlantafx.base.controls.ToggleSwitch;
 import atlantafx.base.layout.InputGroup;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.State;
@@ -49,7 +50,7 @@ public class SettingController implements Initializable {
         Tile theme = theme();
         Tile timeout = timeout();
         Tile folder = folder();
-        box.getChildren().addAll(language, theme, timeout, folder);
+        box.getChildren().addAll(language, theme, timeout, folder,updater());
         this.center.getChildren().add(box);
 
         AnchorPane.setTopAnchor(box, 0.0);
@@ -167,6 +168,21 @@ public class SettingController implements Initializable {
         comboBox.setPrefWidth(WIDTH);
         tile.setAction(comboBox);
         tile.setActionHandler(comboBox::requestFocus);
+        return tile;
+    }
+
+    private Tile updater() {
+        Tile tile = new Tile(
+                SettingClient.bundle().getString("updater.auto"),
+                ""
+        );
+        ToggleSwitch toggle = new ToggleSwitch();
+        toggle.setSelected(settingProperty.getAutoUpdater());
+        toggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            settingProperty.autoUpdater().set(newValue);
+        });
+        tile.setAction(toggle);
+        tile.setActionHandler(toggle::requestFocus);
         return tile;
     }
 }

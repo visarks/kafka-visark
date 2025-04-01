@@ -107,9 +107,12 @@ public class StageUtils {
     }
 
     public static Stage none(Node parent) {
+        return none(parent,null);
+    }
+    public static Stage none(Node parent,Runnable runnable) {
         Stage stage = new Stage();
         Card card = new Card();
-        CardHeaderPane header = new CardHeaderPane(stage,null,null);
+        CardHeaderPane header = new CardHeaderPane(stage,null,runnable);
         card.setHeader(header);
         card.setBody(parent);
         stage.initStyle(StageStyle.TRANSPARENT);

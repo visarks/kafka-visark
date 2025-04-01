@@ -21,6 +21,7 @@ import com.podigua.kafka.event.EventBus;
 import com.podigua.kafka.event.ExitPublishEvent;
 import com.podigua.kafka.event.TooltipEvent;
 import com.podigua.kafka.gift.controller.GiftController;
+import com.podigua.kafka.updater.Updater;
 import com.podigua.kafka.visark.cluster.controller.ClusterController;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.cluster.event.ClusterCloseEvent;
@@ -266,6 +267,7 @@ public class HomeController implements Initializable {
         treeView.setContextMenu(new ContextMenu());
         treeView.getSelectionModel().selectedItemProperty().addListener(new ClusterNodeChangeListener(treeView, this.tabPane));
         openDialog();
+        openCheckUpdate();
         treeView.setOnMouseClicked(event -> {
             if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
                 Optional.ofNullable(treeView.getSelectionModel()).ifPresent(model -> {
@@ -275,6 +277,16 @@ public class HomeController implements Initializable {
                 });
             }
         });
+    }
+
+    private void openCheckUpdate() {
+        if (Boolean.TRUE.equals(SettingClient.get().getAutoUpdater())) {
+            Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3)));
+            timeline.setOnFinished(e -> {
+                Updater.check();
+            });
+            timeline.play();
+        }
     }
 
     private void initTheme() {
