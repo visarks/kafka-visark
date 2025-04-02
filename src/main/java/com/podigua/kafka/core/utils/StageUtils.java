@@ -118,14 +118,16 @@ public class StageUtils {
         stage.initStyle(StageStyle.TRANSPARENT);
         stage.initModality(Modality.APPLICATION_MODAL);
         Scene scene = new Scene(card);
-//        scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
+        scene.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
         stage.setScene(scene);
         stage.initOwner(State.stage());
-        stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{
-            if(KeyCode.ESCAPE==event.getCode()){
-                stage.close();
-            }
-        });
+        if(runnable==null){
+            stage.addEventHandler(KeyEvent.KEY_PRESSED,event->{
+                if(KeyCode.ESCAPE==event.getCode()){
+                    stage.close();
+                }
+            });
+        }
         return stage;
     }
 }

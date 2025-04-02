@@ -3,11 +3,11 @@ package com.podigua.kafka.updater;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.podigua.kafka.State;
 import com.podigua.kafka.core.utils.BeanUtils;
-import com.podigua.kafka.core.utils.FileUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.path.utils.SystemUtils;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,7 +30,6 @@ import java.nio.charset.StandardCharsets;
  */
 public class Updater {
     private static final Logger logger = LoggerFactory.getLogger(Updater.class);
-    private static final String URL = "http://localhost:8080/releases/kafka-visark";
     public static final OkHttpClient CLIENT = new OkHttpClient();
 
     public static void main(String[] args) throws IOException {
@@ -48,8 +47,8 @@ public class Updater {
      */
     public static Releases getReleases() {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            logger.info("获取版本,url:{}",URL);
-            Request request = new Request.Builder().url(URL).get().build();
+            logger.info("获取版本,url:{}",State.URL);
+            Request request = new Request.Builder().url(State.URL).get().build();
             Response response = CLIENT.newCall(request).execute();
             ResponseBody body = response.body();
             InputStream stream = body.byteStream();
@@ -82,6 +81,7 @@ public class Updater {
                     UpdatePane pane = new UpdatePane(releases, platform);
                     Stage stage = StageUtils.none(pane,pane.getOnClose());
                     pane.setStage(stage);
+                    stage.initModality(Modality.NONE);
                     stage.show();
                 }
             } else {

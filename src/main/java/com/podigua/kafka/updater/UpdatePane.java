@@ -4,6 +4,7 @@ import atlantafx.base.controls.Notification;
 import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.core.event.NoticeCloseEvent;
+import com.podigua.kafka.core.utils.AlertUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.geometry.Insets;
@@ -128,12 +129,15 @@ public class UpdatePane extends BorderPane {
 
     public Runnable getOnClose() {
         return () -> {
-            if (this.task.isRunning()) {
-                task.cancel();
-                this.stage.close();
-            } else {
-                this.stage.close();
-            }
+            AlertUtils.confirm(SettingClient.bundle().getString("alert.cancel.updater.prompt")).ifPresent(type -> {
+                if (this.task.isRunning()) {
+                    task.cancel();
+                    this.stage.close();
+                } else {
+                    this.stage.close();
+                }
+            });
+
         };
     }
 }

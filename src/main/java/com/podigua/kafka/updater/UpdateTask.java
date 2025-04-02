@@ -49,7 +49,7 @@ public class UpdateTask extends Task<File> {
         try (InputStream inputStream = body.byteStream();
              BufferedInputStream bis = new BufferedInputStream(inputStream);
              FileOutputStream fos = new FileOutputStream(target)) {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[1024*300];
             int bytesRead;
             long loaded = 0;
             while ((bytesRead = bis.read(buffer)) != -1) {

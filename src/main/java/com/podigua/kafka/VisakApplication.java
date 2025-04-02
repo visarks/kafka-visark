@@ -8,7 +8,6 @@ import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
 import com.podigua.kafka.event.ExitPublishEvent;
-import com.podigua.kafka.license.LicenseUtils;
 import com.podigua.kafka.updater.Updater;
 import com.podigua.kafka.visark.home.controller.HomeController;
 import com.podigua.kafka.visark.setting.SettingClient;
@@ -74,7 +73,6 @@ public class VisakApplication extends Application {
                 logger.error("写入license文件失败", e);
             }
         }
-        State.license = LicenseUtils.decrypt(FileUtils.read(license));
     }
 
     private void subscribe() {
