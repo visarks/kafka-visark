@@ -5,6 +5,9 @@ import com.podigua.kafka.State;
 import com.podigua.kafka.core.utils.BeanUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
+import com.podigua.kafka.updater.ssl.SSLUtils;
+import com.podigua.kafka.updater.ssl.TrustAllCerts;
+import com.podigua.kafka.updater.ssl.TrustAllHostnameVerifier;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.path.utils.SystemUtils;
 import javafx.stage.Modality;
@@ -18,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -30,15 +32,10 @@ import java.nio.charset.StandardCharsets;
  */
 public class Updater {
     private static final Logger logger = LoggerFactory.getLogger(Updater.class);
-    public static final OkHttpClient CLIENT = new OkHttpClient();
-
-    public static void main(String[] args) throws IOException {
-        String url = "http://localhost:8080/releases/kafka-visark/darwin-x86_64";
-        Request request = new Request.Builder().url(url).get().build();
-        Response response = CLIENT.newCall(request).execute();
-        ResponseBody body = response.body();
-        System.out.println("");
-    }
+    public static final OkHttpClient CLIENT = new OkHttpClient.Builder()
+            .sslSocketFactory(SSLUtils.createSocketFactory(),new TrustAllCerts())
+            .hostnameVerifier(new TrustAllHostnameVerifier())
+            .build();
 
     /**
      * 获取版本
@@ -63,6 +60,7 @@ public class Updater {
             }
             return null;
         } catch (Exception e) {
+            logger.error("获取版本失败",e);
             throw new RuntimeException();
         }
     }
