@@ -3,6 +3,7 @@ package com.podigua.kafka.admin.task;
 import com.podigua.kafka.admin.*;
 import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.admin.enums.SearchType;
+import com.podigua.kafka.core.utils.ThreadUtils;
 import com.podigua.kafka.core.utils.UUIDUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -16,11 +17,10 @@ import org.springframework.util.CollectionUtils;
 
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -36,7 +36,6 @@ public class SearchMessageTask extends QueryTask<Long> {
     private static final Logger logger = LoggerFactory.getLogger(SearchMessageTask.class);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final AtomicLong counts = new AtomicLong(0);
-
     /**
      * 主题
      */
@@ -95,20 +94,63 @@ public class SearchMessageTask extends QueryTask<Long> {
         if (CollectionUtils.isEmpty(offsets)) {
             return 0L;
         }
-        List<ConsumerRecord<byte[], byte[]>> result = new ArrayList<>();
+        asyncProcess(properties, offsets);
+//        syncProcess(properties, offsets);
+        logger.info("总任务查询完成,topic:{},总数:{},耗时:{}", topic, counts.get(), (System.currentTimeMillis() - start));
+        return counts.get();
+    }
+
+    private void asyncProcess(Properties properties, List<Offset> offsets) {
+        List<Future<?>> futures = new ArrayList<>();
+
+        for (Offset offset : offsets) {
+            futures.add(ThreadUtils.virtual().submit(() -> {
+                try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
+                    consumer.assign(Collections.singletonList(offset.topicPartition));
+                    long childStart = System.currentTimeMillis();
+                    logger.info("子任务开始查询,topic:{},partition:{},start:{},end:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), offset.start(), offset.end());
+                    consumer.seek(offset.topicPartition, offset.start);
+                    exit:
+                    while (true) {
+                        ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(10));
+                        for (ConsumerRecord<byte[], byte[]> record : records) {
+                            counts.getAndIncrement();
+                            if (shutdown.get()) {
+                                break exit;
+                            }
+                            callback.accept(record);
+                            if (record.offset() >= offset.end) {
+                                break exit;
+                            }
+                        }
+                    }
+                    logger.info("子任务查询结束,topic{},partition:{},耗时:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), (System.currentTimeMillis() - childStart));
+                } catch (Exception e) {
+                    logger.error("接收消息失败", e);
+                }
+            }));
+        }
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                logger.error("获取结果失败", e);
+            }
+        }
+    }
+
+    private void syncProcess(Properties properties, List<Offset> offsets) {
         try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
             consumer.assign(offsets.stream().map(Offset::topicPartition).collect(Collectors.toList()));
             for (Offset offset : offsets) {
                 long childStart = System.currentTimeMillis();
-                logger.info("子任务开始查询,topic:" + offset.topicPartition.topic() + ",partition:" + offset.topicPartition.partition() + ",start:" + offset.start() + ",end:" + offset.end());
                 logger.info("子任务开始查询,topic:{},partition:{},start:{},end:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), offset.start(), offset.end());
                 consumer.seek(offset.topicPartition, offset.start);
                 exit:
                 while (true) {
-                    ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(100));
+                    ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(10));
                     for (ConsumerRecord<byte[], byte[]> record : records) {
                         counts.getAndIncrement();
-                        result.add(record);
                         if (shutdown.get()) {
                             break exit;
                         }
@@ -118,12 +160,9 @@ public class SearchMessageTask extends QueryTask<Long> {
                         }
                     }
                 }
-                logger.info("子任务查询结束,topic:" + offset.topicPartition.topic() + ",partition:" + offset.topicPartition.partition() + ",耗时:" + (System.currentTimeMillis() - childStart));
-                logger.info("子任务查询结束,topic{},partition:{},耗时:{}" ,offset.topicPartition.topic() ,offset.topicPartition.partition(), (System.currentTimeMillis() - childStart));
+                logger.info("子任务查询结束,topic{},partition:{},耗时:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), (System.currentTimeMillis() - childStart));
             }
         }
-        logger.info("总任务查询完成,topic:{},总数:{},耗时:{}", topic, counts.get(), (System.currentTimeMillis() - start));
-        return counts.get();
     }
 
     private List<Offset> compOffset(List<TopicOffset> list, List<TopicTimeOffset> times) {

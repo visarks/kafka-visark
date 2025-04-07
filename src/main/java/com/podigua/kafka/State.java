@@ -14,7 +14,6 @@ public class State {
     public static final String PRODUCT="Kafka-Visark";
     public static final String VERSION="v1.1.8";
     public static final String URL = "https://www.visark.cn/store/releases/kafka-visark";
-//    public static final String URL = "https://101.126.134.148/store/releases/kafka-visark";
     static HostServices hostServices;
     static Stage stage;
     static Pane pane;

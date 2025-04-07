@@ -18,7 +18,7 @@ import com.podigua.kafka.visark.home.control.DateTimePicker;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.entity.Message;
 import com.podigua.kafka.visark.home.entity.TotalDetails;
-import com.podigua.kafka.visark.home.task.ExcelOutputTask;
+import com.podigua.kafka.visark.home.task.FileTask;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.path.Paths;
 import javafx.application.Platform;
@@ -29,6 +29,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -140,7 +141,7 @@ public class TopicMessagePane extends ContentBorderPane {
 
 
     private final DateTimePicker picker = new DateTimePicker();
-    private ExcelOutputTask downloadTask;
+    private FileTask downloadTask;
     private final Button download = new Button();
 
     private final SimpleBooleanProperty downloading = new SimpleBooleanProperty(false);
@@ -350,7 +351,7 @@ public class TopicMessagePane extends ContentBorderPane {
             }
             String folder = SettingClient.get().getDownloadFolder();
             File target = null;
-            String filename = this.value().label() + ".xlsx";
+            String filename = this.value().label() + ".txt";
             if (StringUtils.hasText(folder) && new File(folder).exists()) {
                 target = FileUtils.guess(new File(folder), filename);
             } else {
@@ -362,7 +363,7 @@ public class TopicMessagePane extends ContentBorderPane {
             if (target != null) {
                 downloading.setValue(!downloading.get());
                 if (downloading.get()) {
-                    downloadTask = new ExcelOutputTask(target, new ArrayList<>(rows));
+                    downloadTask = new FileTask(target, new ArrayList<>(rows));
                     File finalTarget = target;
                     downloadTask.setOnSucceeded(e -> {
                         downloading.setValue(false);
@@ -504,7 +505,9 @@ public class TopicMessagePane extends ContentBorderPane {
             var messageCounts = new AtomicLong(0);
             searchTask = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType).partition(partitions.getValue().partition).time(picker.getDateTimeValue()).offset(new BigDecimal(offset.getValue()).longValue()).count(counts.getValue()), record -> {
                 var message = new Message(record);
-                this.rows.add(0, message);
+                Platform.runLater(()->{
+                    this.rows.add(0,message);
+                });
                 messageCounts.getAndIncrement();
             });
             long start = System.currentTimeMillis();

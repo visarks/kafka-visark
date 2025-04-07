@@ -149,9 +149,7 @@ public class VisakApplication extends Application {
 
     private MenuItem checkUpdater() {
         MenuItem updater = new MenuItem(SettingClient.bundle().getString("updater.check"));
-        updater.setOnAction(event -> {
-            Updater.check();
-        });
+        updater.setOnAction(event -> Updater.check());
         return updater;
     }
 

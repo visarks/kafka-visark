@@ -1,7 +1,6 @@
 package com.podigua.kafka.core.utils;
 
 import com.podigua.path.Paths;
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,15 +85,53 @@ public class FileUtils {
         if (!target.exists()) {
             return target;
         }
-        String name = FilenameUtils.getBaseName(filename);
+        String name =getBaseName(filename);
         int index = 1;
         while (true){
-            File result = new File(folder, name+"-"+(index++)+"."+FilenameUtils.getExtension(filename));
+            File result = new File(folder, name+"-"+(index++)+"."+getExtension(filename));
             if (!result.exists()) {
                 return result;
             }
         }
 
+    }
+    public static String getBaseName(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return "";
+        }
+
+        // 1. 去掉路径部分，只保留文件名
+        String name = new File(filename).getName();
+
+        // 2. 找到最后一个 '.' 的位置
+        int dotIndex = name.lastIndexOf('.');
+
+        // 3. 如果没有 '.' 或者 '.' 是文件名的第一个字符，则返回整个文件名
+        if (dotIndex == -1 || dotIndex == 0) {
+            return name;
+        }
+
+        // 4. 返回去掉扩展名的部分
+        return name.substring(0, dotIndex);
+    }
+    public static String getExtension(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return "";
+        }
+
+        // 1. 去掉路径部分，只保留文件名
+        String name = new File(filename).getName();
+
+        // 2. 找到最后一个 '.' 的位置
+        int dotIndex = name.lastIndexOf('.');
+
+        // 3. 如果没有 '.' 或者 '.' 是文件名的最后一个字符，则没有扩展名
+        if (dotIndex == -1 || dotIndex == name.length() - 1) {
+            return "";
+        }
+
+        // 4. 返回扩展名部分
+        return name.substring(dotIndex + 1);
     }
 
     /**
@@ -157,7 +194,7 @@ public class FileUtils {
         }
         return hexString.toString();
     }
-    public static void copy(InputStream input, FileOutputStream output) {
+    public static void copy(InputStream input, OutputStream output) {
         try {
             byte[] buffer = new byte[1024];
             int len;

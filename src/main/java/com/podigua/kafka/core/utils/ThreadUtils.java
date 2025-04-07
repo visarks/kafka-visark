@@ -20,7 +20,7 @@ public class ThreadUtils {
      * @param task 任务
      */
     public static <T> void start(Task<T> task) {
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     /**

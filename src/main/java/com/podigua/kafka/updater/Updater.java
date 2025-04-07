@@ -3,6 +3,7 @@ package com.podigua.kafka.updater;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.podigua.kafka.State;
 import com.podigua.kafka.core.utils.BeanUtils;
+import com.podigua.kafka.core.utils.FileUtils;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.updater.ssl.SSLUtils;
@@ -16,7 +17,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +49,9 @@ public class Updater {
             Response response = CLIENT.newCall(request).execute();
             ResponseBody body = response.body();
             InputStream stream = body.byteStream();
-            IOUtils.copy(stream, output);
+            FileUtils.copy(stream, output);
             String content = new String(output.toByteArray(), StandardCharsets.UTF_8);
             logger.info("获取版本完成:{}", content);
-            IOUtils.closeQuietly(stream);
             Result<Releases> result = BeanUtils.readValue(content, new TypeReference<Result<Releases>>() {
             });
             if (result != null && Boolean.TRUE.equals(result.getSuccess())) {
