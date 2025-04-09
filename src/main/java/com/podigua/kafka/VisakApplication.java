@@ -55,24 +55,11 @@ public class VisakApplication extends Application {
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();
-        license();
         Platform.Preferences preferences = Platform.getPreferences();
         preferences.colorSchemeProperty().addListener((observable, oldValue, newValue) -> new ThemeChangeEvent().publish());
         SettingClient.get();
         subscribe();
         new ThemeChangeEvent().publish();
-    }
-
-    private void license() {
-        File license = FileUtils.file("license");
-        if (!license.exists()) {
-            InputStream stream = Resources.getResourceAsStream("/license");
-            try {
-                FileUtils.copy(stream, new FileOutputStream(license));
-            } catch (Exception e) {
-                logger.error("写入license文件失败", e);
-            }
-        }
     }
 
     private void subscribe() {
@@ -114,16 +101,6 @@ public class VisakApplication extends Application {
         stage.setMinHeight(766);
         stage.setMinWidth(1216);
         stage.setMaximized(true);
-//        stage.getIcons().add(new Image(Resources.getResource("/images/logo.png").toExternalForm()));
-//        stage.setOnShown(event -> {
-//            if(State.license().expire()){
-//                var alert = new Alert(Alert.AlertType.NONE,"许可证已过期,请联系(podigua@126.com)更新换的许可证",ButtonType.OK);
-//                alert.initOwner(State.stage());
-//                alert.initModality(Modality.APPLICATION_MODAL);
-//                alert.showAndWait();
-//                Platform.exit();
-//            }
-//        });
         Platform.runLater(() -> {
             stage.show();
             stage.requestFocus();
