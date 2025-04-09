@@ -19,6 +19,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -52,10 +53,10 @@ public class Updater {
             FileUtils.copy(stream, output);
             String content = new String(output.toByteArray(), StandardCharsets.UTF_8);
             logger.info("获取版本完成:{}", content);
-            Result<Releases> result = BeanUtils.readValue(content, new TypeReference<Result<Releases>>() {
+            Releases result = BeanUtils.readValue(content, new TypeReference<Releases>() {
             });
-            if (result != null && Boolean.TRUE.equals(result.getSuccess())) {
-                return result.getData();
+            if (result != null && StringUtils.hasText(result.getVersion())) {
+                return result;
             }
             return null;
         } catch (Exception e) {
@@ -73,7 +74,7 @@ public class Updater {
             if (isNewVersion(current, latest)) {
                 Platform platform = getPlatform(releases);
                 if (platform == null) {
-                    MessageUtils.warning(SettingClient.bundle().getString("updater.platform.error"));
+                    MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
                 } else {
                     UpdatePane pane = new UpdatePane(releases, platform);
                     Stage stage = StageUtils.none(pane,pane.getOnClose());
