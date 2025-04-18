@@ -8,8 +8,8 @@
 
 > 本软件使用`javafx`开发的 kafka 跨平台客户端
 
-# 下载地址
-链接: https://pan.baidu.com/s/1yBg2se16eTnodWH_cDU7Yw?pwd=y2h8 提取码: y2h8
+# 官网
+https://www.visark.cn/
 
 # 功能列表
 1. topic的创建,删除,查看
