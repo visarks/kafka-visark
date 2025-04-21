@@ -121,7 +121,7 @@ public class MetricClusterPane extends ContentBorderPane {
                     e.printStackTrace();
                 }
             });
-            new Thread(task).start();
+            Thread.ofVirtual().start(task);
         });
 
     }

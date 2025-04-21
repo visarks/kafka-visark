@@ -85,7 +85,7 @@ public class ShowConsumerMemberPane extends BorderPane {
         task.setOnFailed(event -> {
             LoadingEvent.STOP.publish();
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
 

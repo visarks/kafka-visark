@@ -66,7 +66,7 @@ public class ShowTopicOffsetPane extends BaseRefreshPane {
             }
         });
         task.setOnFailed(event -> this.loading.setVisible(false));
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     private void addCenter() {

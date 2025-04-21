@@ -390,7 +390,7 @@ public class TopicMessagePane extends ContentBorderPane {
                         MessageUtils.error(SettingClient.bundle().getString("download.fail"));
                         throw new RuntimeException(exception);
                     });
-                    new Thread(downloadTask).start();
+                    Thread.ofVirtual().start(downloadTask);
                 } else {
                     if (downloadTask != null && downloadTask.isRunning()) {
                         downloadTask.shutdown();

@@ -311,7 +311,7 @@ public class ClusterController implements Initializable {
                 logger.warn("取消连接:{}", property.getServers());
                 stage.close();
             });
-            new Thread(task).start();
+            Thread.ofVirtual().start(task);
         });
 
     }

@@ -174,7 +174,7 @@ public class AddTopicPane extends BorderPane {
                 save.setGraphic(saveIcon);
                 failConsumer.accept(event.getSource().getException());
             });
-            new Thread(task).start();
+            Thread.ofVirtual().start(task);
         });
     }
 

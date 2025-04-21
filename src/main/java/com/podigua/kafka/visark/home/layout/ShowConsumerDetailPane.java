@@ -53,7 +53,7 @@ public class ShowConsumerDetailPane extends BorderPane {
         task.setOnFailed(event -> {
             LoadingEvent.STOP.publish();
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     private void addCenter() {

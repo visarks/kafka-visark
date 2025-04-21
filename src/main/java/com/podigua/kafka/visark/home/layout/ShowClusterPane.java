@@ -59,7 +59,7 @@ public class ShowClusterPane extends BaseRefreshPane {
         task.setOnFailed(event -> {
             LoadingEvent.STOP.publish();
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     private void addCenter() {

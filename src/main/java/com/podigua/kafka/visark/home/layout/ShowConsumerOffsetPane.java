@@ -107,7 +107,7 @@ public class ShowConsumerOffsetPane extends BorderPane {
                 throw new RuntimeException(event.getSource().getException());
             });
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     private void addCenter() {

@@ -5,15 +5,14 @@ import com.podigua.kafka.core.utils.DatasourceUtils;
 import com.podigua.kafka.visark.setting.entity.SettingProperty;
 import com.podigua.kafka.visark.setting.enums.Language;
 import com.podigua.kafka.visark.setting.enums.Themes;
-import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 出厂设置

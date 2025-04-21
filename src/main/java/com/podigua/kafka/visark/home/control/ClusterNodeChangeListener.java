@@ -184,7 +184,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                     task.setOnFailed(e -> {
                         AlertUtils.error(State.stage(), e.getSource().getException().getMessage());
                     });
-                    new Thread(task).start();
+                    Thread.ofVirtual().start(task);
                 });
             });
         });
@@ -343,7 +343,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
             task.setOnFailed(e -> {
                 AlertUtils.error(State.stage(), e.getSource().getException().getMessage());
             });
-            new Thread(task).start();
+            Thread.ofVirtual().start(task);
         });
     }
 
@@ -382,7 +382,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
             AlertUtils.confirm(event.getSource().getException().getMessage());
             this.treeView.refresh();
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     private void addRefreshTopicAction() {

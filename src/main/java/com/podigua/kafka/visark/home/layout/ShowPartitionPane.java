@@ -71,7 +71,7 @@ public class ShowPartitionPane extends BaseRefreshPane {
             this.loading.setVisible(false);
             AlertUtils.error(State.stage(), event.getSource().getException().getMessage());
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     private void addCenter() {

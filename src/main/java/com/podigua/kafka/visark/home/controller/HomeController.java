@@ -214,7 +214,7 @@ public class HomeController implements Initializable {
             this.treeView.refresh();
             AlertUtils.error(State.stage(), AdminManger.translate(event.getSource().getException()).getMessage());
         });
-        new Thread(task).start();
+        Thread.ofVirtual().start(task);
     }
 
     @Override
