@@ -1,6 +1,5 @@
 package com.podigua.kafka;
 
-import java.util.Enumeration;
 import java.util.Properties;
 
 public class Test {

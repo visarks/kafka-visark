@@ -3,7 +3,6 @@ package com.podigua.kafka;
 import com.podigua.kafka.about.AbortPane;
 import com.podigua.kafka.core.handler.DefaultExceptionHandler;
 import com.podigua.kafka.core.utils.DatasourceUtils;
-import com.podigua.kafka.core.utils.FileUtils;
 import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.core.utils.StageUtils;
 import com.podigua.kafka.event.EventBus;
@@ -31,9 +30,6 @@ import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.util.Arrays;
 
 
@@ -126,7 +122,7 @@ public class VisakApplication extends Application {
 
     private MenuItem checkUpdater() {
         MenuItem updater = new MenuItem(SettingClient.bundle().getString("updater.check"));
-        updater.setOnAction(event -> Updater.check());
+        updater.setOnAction(event -> Updater.check(true));
         return updater;
     }
 

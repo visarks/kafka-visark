@@ -282,9 +282,7 @@ public class HomeController implements Initializable {
     private void openCheckUpdate() {
         if (Boolean.TRUE.equals(SettingClient.get().getAutoUpdater())) {
             Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3)));
-            timeline.setOnFinished(e -> {
-                Updater.check();
-            });
+            timeline.setOnFinished(e -> Updater.check(false));
             timeline.play();
         }
     }

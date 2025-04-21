@@ -11,6 +11,7 @@ import com.podigua.kafka.updater.ssl.TrustAllCerts;
 import com.podigua.kafka.updater.ssl.TrustAllHostnameVerifier;
 import com.podigua.kafka.visark.setting.SettingClient;
 import com.podigua.path.utils.SystemUtils;
+import javafx.concurrent.Task;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import okhttp3.OkHttpClient;
@@ -34,7 +35,7 @@ import java.nio.charset.StandardCharsets;
 public class Updater {
     private static final Logger logger = LoggerFactory.getLogger(Updater.class);
     public static final OkHttpClient CLIENT = new OkHttpClient.Builder()
-            .sslSocketFactory(SSLUtils.createSocketFactory(),new TrustAllCerts())
+            .sslSocketFactory(SSLUtils.createSocketFactory(), new TrustAllCerts())
             .hostnameVerifier(new TrustAllHostnameVerifier())
             .build();
 
@@ -43,52 +44,71 @@ public class Updater {
      *
      * @return {@link Releases }
      */
-    public static Releases getReleases() {
-        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            logger.info("获取版本,url:{}",State.URL);
-            Request request = new Request.Builder().url(State.URL).get().build();
-            Response response = CLIENT.newCall(request).execute();
-            ResponseBody body = response.body();
-            InputStream stream = body.byteStream();
-            FileUtils.copy(stream, output);
-            String content = new String(output.toByteArray(), StandardCharsets.UTF_8);
-            logger.info("获取版本完成:{}", content);
-            Releases result = BeanUtils.readValue(content, new TypeReference<Releases>() {
-            });
-            if (result != null && StringUtils.hasText(result.getVersion())) {
-                return result;
+    public static Task<Releases> getReleases() {
+        return new Task<>() {
+            @Override
+            protected Releases call() throws Exception {
+                try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                    logger.info("获取版本,url:{}", com.podigua.kafka.State.URL);
+                    Request request = new Request.Builder().url(com.podigua.kafka.State.URL).get().build();
+                    Response response = CLIENT.newCall(request).execute();
+                    ResponseBody body = response.body();
+
+                    if (body == null) {
+                        throw new RuntimeException("获取版本失败");
+                    }
+                    FileUtils.copy(body.byteStream(), output);
+                    String content = output.toString(StandardCharsets.UTF_8);
+                    logger.info("获取版本完成:{}", content);
+                    Releases result = BeanUtils.readValue(content, new TypeReference<Releases>() {
+                    });
+                    response.close();
+                    if (result != null && StringUtils.hasText(result.getVersion())) {
+                        return result;
+                    }
+                    throw new RuntimeException("获取版本失败1");
+                } catch (Exception e) {
+                    logger.error("获取版本失败", e);
+                    throw new RuntimeException();
+                }
             }
-            return null;
-        } catch (Exception e) {
-            logger.error("获取版本失败",e);
-            throw new RuntimeException();
-        }
+        };
+
     }
 
 
-    public static void check() {
-        try {
-            Releases releases = getReleases();
+    public static void check(boolean tips) {
+        Task<Releases> task = getReleases();
+        task.setOnSucceeded(handler -> {
+            Releases releases = (Releases) handler.getSource().getValue();
             Integer[] latest = version(releases.getVersion());
             Integer[] current = version(State.VERSION);
             if (isNewVersion(current, latest)) {
                 Platform platform = getPlatform(releases);
                 if (platform == null) {
-                    MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
+                    if(tips){
+                        MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
+                    }
                 } else {
                     UpdatePane pane = new UpdatePane(releases, platform);
-                    Stage stage = StageUtils.none(pane,pane.getOnClose());
+                    Stage stage = StageUtils.none(pane, pane.getOnClose());
                     pane.setStage(stage);
                     stage.initModality(Modality.NONE);
                     stage.show();
                 }
             } else {
-                MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
+                if(tips){
+                    MessageUtils.success(SettingClient.bundle().getString("updater.tooltip"));
+                }
             }
-        } catch (Exception e) {
-            MessageUtils.error(SettingClient.bundle().getString("updater.error"));
-            logger.error("获取版本失败", e);
-        }
+        });
+        task.setOnFailed(handler -> {
+            Throwable exception = handler.getSource().getException();
+            if (exception != null) {
+                MessageUtils.error(SettingClient.bundle().getString("updater.error"));
+            }
+        });
+        Thread.ofVirtual().start(task);
     }
 
     private static Platform getPlatform(Releases releases) {

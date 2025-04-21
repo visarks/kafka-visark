@@ -84,7 +84,7 @@ public class UpdatePane extends BorderPane {
             box.getChildren().remove(download);
             box.getChildren().add(cancel);
             downloadProgress.setVisible(true);
-            new Thread(task).start();
+            Thread.ofVirtual().start(this.task);
         });
         cancel.setOnAction(event -> {
             getOnClose().run();
