@@ -138,7 +138,7 @@
                     <macPackageIdentifier>kafka-visark</macPackageIdentifier>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
                     <vendor>破地瓜</vendor>
-                    <aboutUrl>https://www.visark.net/kafka</aboutUrl>
+                    <aboutUrl>https://www.visark.cn</aboutUrl>
                     <copyright>Copyright©2024破地瓜</copyright>
                     <description>kafka连接工具</description>
                     <winDirChooser>true</winDirChooser>
