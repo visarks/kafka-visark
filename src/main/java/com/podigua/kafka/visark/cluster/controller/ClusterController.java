@@ -159,8 +159,12 @@ public class ClusterController implements Initializable {
                 deleteButton.setDisable(false);
                 if (newValue.getValue() != null && "cluster".equals(newValue.getValue().getType())) {
                     connectButton.setDisable(false);
+                    addButton.setDisable(true);
+                    addFolderButton.setDisable(true);
                 } else {
                     connectButton.setDisable(true);
+                    addButton.setDisable(false);
+                    addFolderButton.setDisable(false);
                 }
             } else {
                 editButton.setDisable(true);
