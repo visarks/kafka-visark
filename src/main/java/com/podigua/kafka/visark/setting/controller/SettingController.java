@@ -180,6 +180,7 @@ public class SettingController implements Initializable {
         toggle.setSelected(settingProperty.getAutoUpdater());
         toggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
             settingProperty.autoUpdater().set(newValue);
+//            toggle.pseudoClassStateChanged(Styles.STATE_ACCENT, newValue);
         });
         tile.setAction(toggle);
         tile.setActionHandler(toggle::requestFocus);

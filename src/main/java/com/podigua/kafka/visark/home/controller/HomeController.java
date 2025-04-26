@@ -13,6 +13,7 @@ import com.podigua.kafka.admin.task.QueryTopicsTask;
 import com.podigua.kafka.core.event.LoadingEvent;
 import com.podigua.kafka.core.event.NoticeCloseEvent;
 import com.podigua.kafka.core.event.NoticeEvent;
+import com.podigua.kafka.core.unit.DataSize;
 import com.podigua.kafka.core.utils.AlertUtils;
 import com.podigua.kafka.core.utils.NodeUtils;
 import com.podigua.kafka.core.utils.Resources;
@@ -68,6 +69,8 @@ import org.kordamp.ikonli.material2.Material2OutlinedMZ;
 import org.kordamp.ikonli.remixicon.RemixiconAL;
 import org.springframework.util.StringUtils;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -163,14 +166,14 @@ public class HomeController implements Initializable {
             Notification notification = event.notification();
             rootPane.getChildren().remove(notification);
         });
-        EventBus.getInstance().subscribe(LoadingEvent.class, event -> {
-            state.getChildren().clear();
-            if (event.loading()) {
-                state.getChildren().add(progress);
-            } else {
-                state.getChildren().add(right);
-            }
-        });
+//        EventBus.getInstance().subscribe(LoadingEvent.class, event -> {
+//            state.getChildren().clear();
+//            if (event.loading()) {
+//                state.getChildren().add(progress);
+//            } else {
+//                state.getChildren().add(right);
+//            }
+//        });
         EventBus.getInstance().subscribe(ClusterPublishEvent.class, event -> {
             addTab(event.node());
         });
@@ -270,10 +273,8 @@ public class HomeController implements Initializable {
         openCheckUpdate();
         treeView.setOnMouseClicked(event -> {
             if (MouseButton.PRIMARY.equals(event.getButton()) && event.getClickCount() == 2) {
-                Optional.ofNullable(treeView.getSelectionModel()).ifPresent(model -> {
-                    Optional.ofNullable(model.getSelectedItem()).ifPresent(item -> {
-                        addTab(item.getValue());
-                    });
+                Optional.ofNullable(treeView.getSelectionModel()).flatMap(model -> Optional.ofNullable(model.getSelectedItem())).ifPresent(item -> {
+                    addTab(item.getValue());
                 });
             }
         });
@@ -436,5 +437,9 @@ public class HomeController implements Initializable {
         Parent parent = loader.getRoot();
         Stage stage = StageUtils.none(parent);
         stage.show();
+    }
+
+    public void clear(ActionEvent event) {
+        ManagementFactory.getMemoryMXBean().gc();
     }
 }
