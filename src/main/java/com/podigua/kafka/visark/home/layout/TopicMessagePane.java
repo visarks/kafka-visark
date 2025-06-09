@@ -15,11 +15,15 @@ import com.podigua.kafka.admin.task.QueryTopicOffsetTask;
 import com.podigua.kafka.admin.task.SearchMessageTask;
 import com.podigua.kafka.core.utils.*;
 import com.podigua.kafka.visark.home.control.DateTimePicker;
+import com.podigua.kafka.visark.home.convert.MessageConvertFactory;
+import com.podigua.kafka.visark.home.convert.MessageDeserialization;
 import com.podigua.kafka.visark.home.entity.ClusterNode;
 import com.podigua.kafka.visark.home.entity.Message;
 import com.podigua.kafka.visark.home.entity.TotalDetails;
-import com.podigua.kafka.visark.home.task.FileTask;
+import com.podigua.kafka.visark.home.task.ExcelOutputTask;
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.podigua.kafka.visark.settings.TopicSettingClient;
+import com.podigua.kafka.visark.settings.entity.TopicSettingProperty;
 import com.podigua.path.Paths;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -29,7 +33,6 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -141,7 +144,7 @@ public class TopicMessagePane extends ContentBorderPane {
 
 
     private final DateTimePicker picker = new DateTimePicker();
-    private FileTask downloadTask;
+    private ExcelOutputTask downloadTask;
     private final Button download = new Button();
 
     private final SimpleBooleanProperty downloading = new SimpleBooleanProperty(false);
@@ -157,6 +160,9 @@ public class TopicMessagePane extends ContentBorderPane {
     private SearchMessageTask searchTask;
     private MessageConsumerTask consumerTask;
 
+    private MessageDeserialization keyDeserialization;
+    private MessageDeserialization valueDeserialization;
+
     public TopicMessagePane(ClusterNode node) {
         this.node = node;
         this.getStylesheets().add(Resources.getResource("/css/main.css").toExternalForm());
@@ -167,6 +173,14 @@ public class TopicMessagePane extends ContentBorderPane {
         refreshTask();
         setMessages();
         picker.setDateTimeValue(LocalDateTime.now());
+        setDeserialization();
+
+    }
+
+    private void setDeserialization() {
+        TopicSettingProperty property = TopicSettingClient.getByClusterAndTopic(node.clusterId(), node.label());
+        keyDeserialization =MessageConvertFactory.deserialization(property.getKeyType(),property.getKeyCharset(),property.getKeyProtobufFile());
+        valueDeserialization =MessageConvertFactory.deserialization(property.getValueType(),property.getValueCharset(),property.getValueProtobufFile());
     }
 
     private void setMessages() {
@@ -351,7 +365,7 @@ public class TopicMessagePane extends ContentBorderPane {
             }
             String folder = SettingClient.get().getDownloadFolder();
             File target = null;
-            String filename = this.value().label() + ".txt";
+            String filename = this.value().label() + ".xlsx";
             if (StringUtils.hasText(folder) && new File(folder).exists()) {
                 target = FileUtils.guess(new File(folder), filename);
             } else {
@@ -363,7 +377,7 @@ public class TopicMessagePane extends ContentBorderPane {
             if (target != null) {
                 downloading.setValue(!downloading.get());
                 if (downloading.get()) {
-                    downloadTask = new FileTask(target, new ArrayList<>(rows));
+                    downloadTask = new ExcelOutputTask(target, new ArrayList<>(rows));
                     File finalTarget = target;
                     downloadTask.setOnSucceeded(e -> {
                         downloading.setValue(false);
@@ -428,12 +442,13 @@ public class TopicMessagePane extends ContentBorderPane {
                     return;
                 }
             }
+            this.setDeserialization();
             this.rows.clear();
             this.starting.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             var messageCounts = new AtomicLong(0);
             consumerTask = new MessageConsumerTask(node.clusterId(), node.label(), offsetType.name(), record -> {
-                var message = new Message(record);
+                var message = new Message(record, keyDeserialization, valueDeserialization);
                 synchronized (lock) {
                     Platform.runLater(() -> this.rows.addFirst(message));
                 }
@@ -498,13 +513,14 @@ public class TopicMessagePane extends ContentBorderPane {
                     return;
                 }
             }
+            this.setDeserialization();
             this.rows.clear();
             this.searching.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             SearchType searchType = (SearchType) typeGroup.getSelectedToggle().getUserData();
             var messageCounts = new AtomicLong(0);
             searchTask = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType).partition(partitions.getValue().partition).time(picker.getDateTimeValue()).offset(new BigDecimal(offset.getValue()).longValue()).count(counts.getValue()), record -> {
-                var message = new Message(record);
+                var message = new Message(record, keyDeserialization, valueDeserialization);
                 Platform.runLater(()->{
                     this.rows.add(0,message);
                 });

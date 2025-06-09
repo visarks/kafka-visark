@@ -32,6 +32,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.kordamp.ikonli.material2.Material2OutlinedAL;
+import org.kordamp.ikonli.material2.Material2OutlinedMZ;
 
 import java.util.Iterator;
 import java.util.List;
@@ -91,6 +92,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
      * 添加分区
      */
     private final MenuItem addPartition;
+    private final MenuItem topicSetting;
     /**
      * 刷新消费者
      */
@@ -118,6 +120,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
         this.refreshTopic = new MenuItem(SettingClient.bundle().getString("refresh"), new FontIcon(Material2MZ.REFRESH));
         this.offsetTopic = new MenuItem(SettingClient.bundle().getString("context.menu.offset"), new FontIcon(Material2MZ.OUTLINED_FLAG));
         this.addPartition = new MenuItem(SettingClient.bundle().getString("context.menu.add.partition"), new FontIcon(Material2AL.ADD));
+        this.topicSetting = new MenuItem(SettingClient.bundle().getString("context.menu.setting"), new FontIcon(Material2OutlinedMZ.SETTINGS));
         FontIcon delete = new FontIcon(Material2AL.DELETE);
         delete.getStyleClass().add(Styles.DANGER);
         this.deleteTopic = new MenuItem(SettingClient.bundle().getString("context.menu.delete"), delete);
@@ -141,8 +144,19 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
             new ClusterPublishEvent(value).publish();
         }));
         this.addPartition.setOnAction(event -> checkTopicExists((item, value) -> getCurrentPartitions((current) -> addPartition(value, current))));
+        this.topicSetting.setOnAction(event -> checkTopicExists(this::topicSettings));
         addRefreshConsumerAction();
         this.offsetTopic.setOnAction(event -> checkTopicExists(ClusterNodeChangeListener::topicOffset));
+    }
+
+    private void topicSettings(FilterableTreeItem<ClusterNode> item, ClusterNode value) {
+            TopicSettingPane pane = new TopicSettingPane(value.clusterId(), value.label());
+            Stage stage = StageUtils.show(pane, value.label(), Modality.NONE);
+            pane.setOnCancel(e1 -> stage.close());
+            pane.setOnSave(success -> {
+                stage.close();
+                MessageUtils.success(SettingClient.bundle().getString("form.topic.setting.success"));
+            }, fail -> AlertUtils.error(stage, fail.getMessage()));
     }
 
     private void addDisconnect() {
@@ -430,7 +444,7 @@ public class ClusterNodeChangeListener implements ChangeListener<TreeItem<Cluste
                 case node -> items.add(copy);
                 case topics -> items.addAll(addTopic, refreshTopic);
                 case topic ->
-                        items.addAll(showPartition, offsetTopic, addPartition, splitter, deleteTopic, splitter1, copy);
+                        items.addAll(showPartition, offsetTopic, addPartition,topicSetting, splitter, deleteTopic, splitter1, copy);
                 case consumers -> items.addAll(refreshConsumer);
                 case consumer -> items.addAll(showConsumer, splitter, deleteConsumer, splitter1, copy);
             }

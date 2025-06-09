@@ -1,5 +1,6 @@
 package com.podigua.kafka.visark.home.entity;
 
+import com.podigua.kafka.visark.home.convert.MessageDeserialization;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -20,23 +21,23 @@ import java.util.List;
  */
 public class Message {
     private final long millis;
+    private final MessageDeserialization keyDeserializer;
+    private final MessageDeserialization valueDeserializer;
 
     public Long millis() {
         return this.millis;
     }
 
-    public Message(ConsumerRecord<byte[], byte[]> record) {
+    public Message(ConsumerRecord<byte[], byte[]> record, MessageDeserialization keyDeserializer, MessageDeserialization valueDeserializer) {
         this.topic.set(record.topic());
+        this.keyDeserializer = keyDeserializer;
+        this.valueDeserializer = valueDeserializer;
         this.partition.set(record.partition());
         this.offset.set(record.offset());
         this.millis = record.timestamp();
         this.timestamp.set(LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        if (record.key() != null) {
-            this.key.set(new String(record.key()));
-        }
-        if (record.value() != null) {
-            this.value.set(new String(record.value()));
-        }
+        this.key.set(keyDeserializer.deserialize(record.key()));
+        this.value.set(valueDeserializer.deserialize(record.value()));
         record.headers().forEach(header -> {
             this.headers.add(new Header(header.key(), new String(header.value())));
         });

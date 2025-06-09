@@ -10,10 +10,8 @@ import com.podigua.kafka.admin.QueryTask;
 import com.podigua.kafka.admin.task.QueryConsumersTask;
 import com.podigua.kafka.admin.task.QueryNodesTask;
 import com.podigua.kafka.admin.task.QueryTopicsTask;
-import com.podigua.kafka.core.event.LoadingEvent;
 import com.podigua.kafka.core.event.NoticeCloseEvent;
 import com.podigua.kafka.core.event.NoticeEvent;
-import com.podigua.kafka.core.unit.DataSize;
 import com.podigua.kafka.core.utils.AlertUtils;
 import com.podigua.kafka.core.utils.NodeUtils;
 import com.podigua.kafka.core.utils.Resources;
@@ -70,7 +68,6 @@ import org.kordamp.ikonli.remixicon.RemixiconAL;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -403,7 +400,7 @@ public class HomeController implements Initializable {
     }
 
     public void showGit(ActionEvent event) {
-        State.hostServices().showDocument("https://gitee.com/podigua/kafka-visark");
+        State.hostServices().showDocument(State.GITHUB);
     }
 
     public void changeTheme(ActionEvent event) {

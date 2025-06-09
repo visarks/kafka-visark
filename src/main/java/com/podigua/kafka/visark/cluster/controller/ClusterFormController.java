@@ -1,18 +1,19 @@
 package com.podigua.kafka.visark.cluster.controller;
 
+import atlantafx.base.controls.PasswordTextField;
 import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
 import com.podigua.kafka.visark.cluster.ClusterClient;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.cluster.enums.Mechanism;
-import com.podigua.kafka.visark.cluster.enums.Protocal;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.beans.property.SimpleListProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.kordamp.ikonli.material2.Material2MZ;
@@ -47,7 +48,7 @@ public class ClusterFormController implements Initializable {
     private CheckBox securityField;
     private ComboBox<Mechanism> mechanismField;
     private TextField usernameField;
-    private TextField passwordField;
+    private PasswordTextField passwordField;
     private boolean isAdd;
 
 
@@ -66,12 +67,21 @@ public class ClusterFormController implements Initializable {
 
     private void initPasswordField() {
         passwordTile.setTitle(SettingClient.bundle().getString("cluster.table.password"));
-        passwordField = new PasswordField();
+        passwordField = new PasswordTextField();
         passwordField.textProperty().addListener((e, o, n) -> {
             if (this.clusterProperty != null) {
                 this.clusterProperty.setPassword(n);
             }
         });
+        var icon = new FontIcon(AntDesignIconsOutlined.EYE);
+        icon.setCursor(Cursor.HAND);
+        icon.setOnMouseClicked(e -> {
+            icon.setIconCode(passwordField.getRevealPassword()
+                    ? AntDesignIconsOutlined.EYE : AntDesignIconsOutlined.EYE_INVISIBLE
+            );
+            passwordField.setRevealPassword(!passwordField.getRevealPassword());
+        });
+        passwordField.setRight(icon);
         passwordTile.setAction(passwordField);
         passwordTile.setActionHandler(passwordField::requestFocus);
         passwordField.focusedProperty().addListener((e, o, n) -> {

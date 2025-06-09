@@ -5,6 +5,7 @@ import com.podigua.kafka.core.utils.Resources;
 import com.podigua.kafka.visark.setting.SettingClient;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -28,7 +29,9 @@ public class AbortPane extends BorderPane {
 
     private void center() {
         VBox root = new VBox();
-        Label title = new Label("Kafka Visark "+ State.VERSION);
+        Label title = new Label(State.PRODUCT+" "+ State.VERSION);
+        title.setCursor(Cursor.HAND);
+        title.setOnMouseClicked(e-> State.hostServices().showDocument(State.HOME));
         title.setStyle("-fx-font-size: 20;-fx-font-weight: blod;");
         Label information = new Label(SettingClient.bundle().getString("product.information"));
         Label copyright = new Label("Copyright © 2024");

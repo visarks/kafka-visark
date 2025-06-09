@@ -65,6 +65,7 @@ public class MessageDetailPane extends VBox {
         comboBox.getSelectionModel().select(0);
         String text = this.message.value().get();
         TextArea value = new TextArea(text);
+        value.setWrapText(true);
         value.setEditable(false);
         comboBox.setOnAction(event -> {
             String item = comboBox.getSelectionModel().getSelectedItem();

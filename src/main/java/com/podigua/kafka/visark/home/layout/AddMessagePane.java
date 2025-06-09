@@ -5,7 +5,11 @@ import com.podigua.kafka.admin.Admin;
 import com.podigua.kafka.admin.AdminManger;
 import com.podigua.kafka.core.utils.MessageUtils;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
+import com.podigua.kafka.visark.home.convert.MessageConvertFactory;
+import com.podigua.kafka.visark.home.convert.MessageSerializable;
 import com.podigua.kafka.visark.setting.SettingClient;
+import com.podigua.kafka.visark.settings.TopicSettingClient;
+import com.podigua.kafka.visark.settings.entity.TopicSettingProperty;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,6 +23,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.springframework.util.StringUtils;
@@ -34,7 +39,9 @@ import java.util.Properties;
 public class AddMessagePane extends BorderPane {
     private final String clusterId;
     private final String topic;
-    private final KafkaProducer<String, String> producer;
+    private final KafkaProducer<byte[], byte[]> producer;
+    private final MessageSerializable keySerializable;
+    private final MessageSerializable valueSerializable;
     private final TextField key = new TextField("");
     private final TextArea value = new TextArea("");
 
@@ -45,8 +52,11 @@ public class AddMessagePane extends BorderPane {
         ClusterProperty property = AdminManger.property(this.clusterId);
         Admin admin = new Admin(property);
         Properties properties = admin.properties();
-        properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        TopicSettingProperty settings = TopicSettingClient.getByClusterAndTopic(clusterId, topic);
+        keySerializable= MessageConvertFactory.serializable(settings.getKeyType(),settings.getKeyCharset(),settings.getKeyProtobufFile());
+        valueSerializable= MessageConvertFactory.serializable(settings.getValueType(),settings.getValueCharset(),settings.getValueProtobufFile());
+        properties.put("key.serializer", ByteArraySerializer.class.getName());
+        properties.put("value.serializer", ByteArraySerializer.class.getName());
         producer = new KafkaProducer<>(properties);
         VBox top = new VBox();
         top.getChildren().add(key);
@@ -70,7 +80,7 @@ public class AddMessagePane extends BorderPane {
             String key = this.key.getText();
             String text = this.value.getText();
             if (StringUtils.hasText(text)) {
-                ProducerRecord<String, String> record = new ProducerRecord<>(this.topic, key, text);
+                ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(this.topic, keySerializable.serialize(key), valueSerializable.serialize(text));
                 this.producer.send(record, (metadata, exception) -> Platform.runLater(()->{
                     if (exception == null) {
                         MessageUtils.success(SettingClient.bundle().getString("message.send.success"), Duration.millis(200));
