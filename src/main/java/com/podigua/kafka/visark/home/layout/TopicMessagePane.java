@@ -35,9 +35,9 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -46,6 +46,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.util.Duration;
+import org.jetbrains.annotations.NotNull;
 import org.kordamp.ikonli.antdesignicons.AntDesignIconsOutlined;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material.Material;
@@ -64,6 +65,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static javafx.geometry.Orientation.VERTICAL;
 
@@ -179,8 +181,8 @@ public class TopicMessagePane extends ContentBorderPane {
 
     private void setDeserialization() {
         TopicSettingProperty property = TopicSettingClient.getByClusterAndTopic(node.clusterId(), node.label());
-        keyDeserialization =MessageConvertFactory.deserialization(property.getKeyType(),property.getKeyCharset(),property.getKeyProtobufFile());
-        valueDeserialization =MessageConvertFactory.deserialization(property.getValueType(),property.getValueCharset(),property.getValueProtobufFile());
+        keyDeserialization = MessageConvertFactory.deserialization(property.getKeyType(), property.getKeyCharset(), property.getKeyProtobufFile());
+        valueDeserialization = MessageConvertFactory.deserialization(property.getValueType(), property.getValueCharset(), property.getValueProtobufFile());
     }
 
     private void setMessages() {
@@ -388,7 +390,7 @@ public class TopicMessagePane extends ContentBorderPane {
                                 try {
                                     Desktop.getDesktop().open(finalTarget);
                                 } catch (IOException ex) {
-                                    logger.error("打开文件失败",e);
+                                    logger.error("打开文件失败", e);
                                     throw new RuntimeException(ex);
                                 }
                             });
@@ -446,8 +448,9 @@ public class TopicMessagePane extends ContentBorderPane {
             this.rows.clear();
             this.starting.set(true);
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
+            List<Integer> selectPartitions = getSelectPartitions();
             var messageCounts = new AtomicLong(0);
-            consumerTask = new MessageConsumerTask(node.clusterId(), node.label(), offsetType.name(), record -> {
+            consumerTask = new MessageConsumerTask(node.clusterId(), node.label(), offsetType, selectPartitions, record -> {
                 var message = new Message(record, keyDeserialization, valueDeserialization);
                 synchronized (lock) {
                     Platform.runLater(() -> this.rows.addFirst(message));
@@ -471,6 +474,16 @@ public class TopicMessagePane extends ContentBorderPane {
             });
             ThreadUtils.start(consumerTask);
         });
+    }
+
+    @NotNull
+    private List<Integer> getSelectPartitions() {
+        List<Integer> items = partitions.getItems().stream().map(PartitionSelect::partition).filter(partition -> partition >= 0).collect(Collectors.toList());
+        if (partitions.getValue().partition != -1) {
+            items.clear();
+            items.add(partitions.getValue().partition);
+        }
+        return items;
     }
 
     private void onClear() {
@@ -519,10 +532,11 @@ public class TopicMessagePane extends ContentBorderPane {
             OffsetType offsetType = (OffsetType) offsetGroup.getSelectedToggle().getUserData();
             SearchType searchType = (SearchType) typeGroup.getSelectedToggle().getUserData();
             var messageCounts = new AtomicLong(0);
-            searchTask = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType).partition(partitions.getValue().partition).time(picker.getDateTimeValue()).offset(new BigDecimal(offset.getValue()).longValue()).count(counts.getValue()), record -> {
+            List<Integer> selectPartitions = getSelectPartitions();
+            searchTask = new SearchMessageTask(node.clusterId(), node.label(), new QueryParams(offsetType, searchType).partitions(selectPartitions).time(picker.getDateTimeValue()).offset(new BigDecimal(offset.getValue()).longValue()).count(counts.getValue()), record -> {
                 var message = new Message(record, keyDeserialization, valueDeserialization);
-                Platform.runLater(()->{
-                    this.rows.add(0,message);
+                Platform.runLater(() -> {
+                    this.rows.add(0, message);
                 });
                 messageCounts.getAndIncrement();
             });

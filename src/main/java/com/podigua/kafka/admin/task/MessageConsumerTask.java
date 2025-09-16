@@ -3,16 +3,18 @@ package com.podigua.kafka.admin.task;
 import com.podigua.kafka.admin.Admin;
 import com.podigua.kafka.admin.AdminManger;
 import com.podigua.kafka.admin.QueryTask;
-import com.podigua.kafka.core.utils.Lists;
-import com.podigua.kafka.core.utils.UUIDUtils;
+import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,7 +41,8 @@ public class MessageConsumerTask extends QueryTask<Long> {
     /**
      * 抵消
      */
-    private final String offset;
+    private final OffsetType offsetType;
+    private final List<Integer> partitions;
     /**
      * 回调
      */
@@ -61,10 +64,11 @@ public class MessageConsumerTask extends QueryTask<Long> {
         return shutdown.get();
     }
 
-    public MessageConsumerTask(String clusterId, String topic, String offset, Consumer<ConsumerRecord<byte[], byte[]>> callback) {
+    public MessageConsumerTask(String clusterId, String topic, OffsetType offsetType, List<Integer> partitions, Consumer<ConsumerRecord<byte[], byte[]>> callback) {
         super(clusterId);
         this.topic = topic;
-        this.offset = offset;
+        this.offsetType = offsetType;
+        this.partitions = partitions;
         this.callback = callback;
     }
 
@@ -73,13 +77,21 @@ public class MessageConsumerTask extends QueryTask<Long> {
     protected Long call() throws Exception {
         ClusterProperty property = AdminManger.property(clusterId());
         Properties properties = new Admin(property).properties();
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUIDUtils.groupId());
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, this.offset);
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties);
-        consumer.subscribe(Lists.of(topic));
+        List<TopicPartition> partitions = new ArrayList<>();
+        for (Integer partition : this.partitions) {
+            partitions.add(new TopicPartition(this.topic, partition));
+        }
+
+        consumer.assign(partitions);
+        if(offsetType == OffsetType.latest) {
+            consumer.seekToEnd(partitions);
+        }else {
+            consumer.seekToBeginning(partitions);
+        }
         while (true) {
             ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(100));
             if (shutdown.get()) {

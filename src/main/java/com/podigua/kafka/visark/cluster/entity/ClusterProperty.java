@@ -23,6 +23,7 @@ public class ClusterProperty {
     private final SimpleObjectProperty<Mechanism> mechanism = new SimpleObjectProperty<>(Mechanism.PLAIN);
     private final SimpleStringProperty username = new SimpleStringProperty("");
     private final SimpleStringProperty password = new SimpleStringProperty("");
+    private final SimpleStringProperty properties = new SimpleStringProperty("");
 
     public ClusterProperty copy() {
         ClusterProperty result = new ClusterProperty();
@@ -163,4 +164,15 @@ public class ClusterProperty {
         return mechanism;
     }
 
+    public String getProperties() {
+        return properties.get();
+    }
+
+    public SimpleStringProperty propertiesProperty() {
+        return properties;
+    }
+
+    public void setProperties(String properties) {
+        this.properties.set(properties);
+    }
 }

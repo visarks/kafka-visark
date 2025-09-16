@@ -18,12 +18,4 @@ public class UUIDUtils {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-    /**
-     * 组 ID
-     *
-     * @return {@link Object}
-     */
-    public static Object groupId() {
-        return "kafka-visark-".concat(UUIDUtils.uuid());
-    }
 }

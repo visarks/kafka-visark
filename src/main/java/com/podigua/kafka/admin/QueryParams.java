@@ -4,6 +4,7 @@ import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.admin.enums.SearchType;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 查询参数
@@ -15,7 +16,7 @@ public class QueryParams {
     /**
      * 分区
      */
-    private int partition;
+    private List<Integer> partitions;
     /**
      * 偏移型
      */
@@ -50,18 +51,18 @@ public class QueryParams {
      *
      * @return int
      */
-    public int partition() {
-        return partition;
+    public List<Integer> partitions() {
+        return partitions;
     }
 
     /**
      * 分区
      *
-     * @param partition 分区
+     * @param partitions 分区
      * @return {@link QueryParams}
      */
-    public QueryParams partition(int partition) {
-        this.partition = partition;
+    public QueryParams partitions(List<Integer> partitions) {
+        this.partitions = partitions;
         return this;
     }
 

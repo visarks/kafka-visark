@@ -4,7 +4,6 @@ import com.podigua.kafka.admin.*;
 import com.podigua.kafka.admin.enums.OffsetType;
 import com.podigua.kafka.admin.enums.SearchType;
 import com.podigua.kafka.core.utils.ThreadUtils;
-import com.podigua.kafka.core.utils.UUIDUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -18,8 +17,6 @@ import org.springframework.util.CollectionUtils;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -75,20 +72,13 @@ public class SearchMessageTask extends QueryTask<Long> {
         if (CollectionUtils.isEmpty(list)) {
             return 0L;
         }
-        if (params.partition() != -1) {
-            list = list.stream().filter(e -> e.partition() == params.partition()).collect(Collectors.toList());
-        }
         Properties properties = new Admin(property()).properties();
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, UUIDUtils.groupId());
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-        List<TopicTimeOffset> timeOffset = new ArrayList<>();
+        List<TopicOffset> timeOffset = new ArrayList<>();
         if (SearchType.datetime.equals(params.searchType())) {
             timeOffset = AdminManger.getTopicOffsetsByTime(clusterId(), topic, Timestamp.valueOf(params.time()).getTime());
-        }
-        if (params.partition() != -1) {
-            timeOffset = timeOffset.stream().filter(e -> e.partition() == params.partition()).collect(Collectors.toList());
         }
         List<Offset> offsets = compOffset(list, timeOffset);
         if (CollectionUtils.isEmpty(offsets)) {
@@ -101,6 +91,13 @@ public class SearchMessageTask extends QueryTask<Long> {
     }
 
     private void asyncProcess(Properties properties, List<Offset> offsets) {
+        Iterator<Offset> iterator = offsets.iterator();
+        while (iterator.hasNext()) {
+            Offset next = iterator.next();
+            if(!params.partitions().contains(next.topicPartition.partition())){
+                iterator.remove();
+            }
+        }
         List<Future<?>> futures = new ArrayList<>();
 
         for (Offset offset : offsets) {
@@ -165,7 +162,7 @@ public class SearchMessageTask extends QueryTask<Long> {
         }
     }
 
-    private List<Offset> compOffset(List<TopicOffset> list, List<TopicTimeOffset> times) {
+    private List<Offset> compOffset(List<TopicOffset> list, List<TopicOffset> times) {
         //按照数量 且从头开始消费
         if (SearchType.messages.equals(params.searchType())) {
             return byMessages(list);
@@ -177,29 +174,30 @@ public class SearchMessageTask extends QueryTask<Long> {
         return new ArrayList<>();
     }
 
-    private List<Offset> byTime(List<TopicOffset> topicOffsets, List<TopicTimeOffset> times) {
+    private List<Offset> byTime(List<TopicOffset> topicOffsets, List<TopicOffset> times) {
         List<Offset> result = new ArrayList<>();
         if (CollectionUtils.isEmpty(times)) {
             return result;
         }
-        for (TopicTimeOffset time : times) {
+
+        for (TopicOffset time : times) {
             TopicOffset topicOffset = topicOffsets.stream().filter(topicoffset -> time.partition() == topicoffset.partition()).findFirst().orElse(null);
             if (topicOffset == null) {
                 continue;
             }
             if (OffsetType.earliest.equals(params.offsetType())) {
-                if (time.offset() >= topicOffset.start() && time.offset() <= topicOffset.end()) {
-                    var start = Math.max(topicOffset.start(), (time.offset() - params.count()));
-                    if (time.offset() > start) {
-                        result.add(new Offset(topicOffset.topicPartition(), start, time.offset()));
+                if (time.start() >= topicOffset.start() && time.start() <= topicOffset.end()) {
+                    var start = Math.max(topicOffset.start(), (time.start() - params.count()));
+                    if (time.start() > start) {
+                        result.add(new Offset(topicOffset.topicPartition(), start, time.start()));
                     }
                 }
 
             } else {
-                if (time.offset() >= topicOffset.start() && time.offset() <= topicOffset.end()) {
-                    long end = Math.min(topicOffset.end(), time.offset() + params.count());
-                    if (end > time.offset()) {
-                        result.add(new Offset(topicOffset.topicPartition(), time.offset(), +end - 1));
+                if (time.end() >= topicOffset.start() && time.end() <= topicOffset.end()) {
+                    long end = Math.min(topicOffset.end(), time.start() + params.count());
+                    if (end > time.start()) {
+                        result.add(new Offset(topicOffset.topicPartition(), time.start(), +end - 1));
                     }
                 }
             }
