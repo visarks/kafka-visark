@@ -12,7 +12,7 @@ import javafx.stage.Stage;
  */
 public class State {
     public static final String PRODUCT="kafka-visark";
-    public static final String VERSION="v2.0.2";
+    public static final String VERSION="v2.0.3";
     public static final String URL = "https://www.visark.cn/store/releases/kafka-visark";
     public static final String GITHUB = "https://github.com/visarks/kafka-visark";
     public static final String HOME = "https://www.visark.cn";
