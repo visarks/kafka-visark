@@ -3,6 +3,7 @@ package com.podigua.kafka.visark.cluster.controller;
 import atlantafx.base.controls.PasswordTextField;
 import atlantafx.base.controls.Tile;
 import atlantafx.base.theme.Styles;
+import com.podigua.kafka.core.utils.ClipboardUtils;
 import com.podigua.kafka.visark.cluster.ClusterClient;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.cluster.enums.Mechanism;
@@ -48,7 +49,7 @@ public class ClusterFormController implements Initializable {
     private CheckBox securityField;
     private ComboBox<Mechanism> mechanismField;
     private TextField usernameField;
-    private PasswordTextField passwordField;
+    private PasswordField passwordField;
     private boolean isAdd;
 
 
@@ -67,23 +68,20 @@ public class ClusterFormController implements Initializable {
 
     private void initPasswordField() {
         passwordTile.setTitle(SettingClient.bundle().getString("cluster.table.password"));
-        passwordField = new PasswordTextField();
+        passwordField = new PasswordField();
         passwordField.textProperty().addListener((e, o, n) -> {
             if (this.clusterProperty != null) {
                 this.clusterProperty.setPassword(n);
             }
         });
-        var icon = new FontIcon(AntDesignIconsOutlined.EYE);
-        icon.setCursor(Cursor.HAND);
-        icon.setOnMouseClicked(e -> {
-            icon.setIconCode(passwordField.getRevealPassword()
-                    ? AntDesignIconsOutlined.EYE : AntDesignIconsOutlined.EYE_INVISIBLE
-            );
-            passwordField.setRevealPassword(!passwordField.getRevealPassword());
-        });
-        passwordField.setRight(icon);
         passwordTile.setAction(passwordField);
         passwordTile.setActionHandler(passwordField::requestFocus);
+        passwordTile.setOnMouseClicked(event -> {
+            String text = passwordField.getText();
+            if(StringUtils.hasText(text)){
+                ClipboardUtils.copy(text);
+            }
+        });
         passwordField.focusedProperty().addListener((e, o, n) -> {
             passwordTile.setDescription("");
         });

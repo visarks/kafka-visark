@@ -3,6 +3,7 @@ package com.podigua.kafka.admin;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * @author podigua
  * @date 2024/03/21
  */
+
 public class AdminManger {
     private static final Logger logger = LoggerFactory.getLogger(AdminManger.class);
     private final static Map<String, KafkaAdminClient> CLIENTS = new HashMap<>();
@@ -38,10 +40,13 @@ public class AdminManger {
         Admin admin = new Admin(property);
         KafkaAdminClient client = null;
         try {
+            long start=System.currentTimeMillis();
             client = (KafkaAdminClient) AdminClient.create(admin.properties());
-            DescribeClusterResult result = client.describeCluster(new DescribeClusterOptions().timeoutMs(admin.timeout()));
-            KafkaFuture<Node> controller = result.controller();
-            controller.get();
+            DescribeClusterResult result = client.describeCluster(
+                    new DescribeClusterOptions().timeoutMs(admin.timeout())
+            );
+            result.clusterId().get();
+            logger.info("连接时长:{}",(System.currentTimeMillis()-start));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
