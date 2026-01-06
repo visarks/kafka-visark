@@ -142,7 +142,7 @@
             <plugin>
                 <groupId>io.gitee.podigua</groupId>
                 <artifactId>maven-jfx-plugin</artifactId>
-                <version>0.0.5</version>
+                <version>0.0.4</version>
                 <configuration>
                     <type>${APP_TYPE}</type>
                     <name>kafka-visark</name>
