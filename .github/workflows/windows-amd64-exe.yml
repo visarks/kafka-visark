@@ -1,4 +1,4 @@
-name: macos-arm64-dmg
+name: windows-amd64-exe
 
 # 监听 push 事件（可根据需求改为 pull_request）
 on: workflow_dispatch
