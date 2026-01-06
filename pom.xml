@@ -148,10 +148,10 @@
                     <name>kafka-visark</name>
                     <macPackageIdentifier>kafka-visark</macPackageIdentifier>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
-                    <vendor>破地瓜</vendor>
+                    <vendor>podigua</vendor>
                     <aboutUrl>https://www.visark.cn</aboutUrl>
-                    <copyright>Copyright©2024破地瓜</copyright>
-                    <description>kafka连接工具</description>
+                    <copyright>Copyright©2024podigua</copyright>
+                    <description>kafka-connect-tools</description>
                     <winDirChooser>true</winDirChooser>
                     <winMenu>true</winMenu>
                     <winShortcut>true</winShortcut>
