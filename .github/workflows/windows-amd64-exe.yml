@@ -147,7 +147,7 @@ jobs:
         run: mvn -U org.apache.maven.plugins:maven-plugin-plugin:descriptor
 
       - name: 执行打包 (Windows EXE)
-        shell: bash
+        shell: powershell  # 明确
         run: |
           $env:MAVEN_OPTS = "-Dfile.encoding=UTF-8"
           $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
