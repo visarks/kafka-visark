@@ -54,7 +54,7 @@ jobs:
       - name: 列举生成的构建物
         shell: pwsh
         run: |
-          $outputDir = "target\jfx\native"
+          $outputDir = "target\javafx"
           if (Test-Path $outputDir) {
             Write-Host "✅ 找到构建输出目录: $outputDir"
             Get-ChildItem $outputDir -Recurse | Format-List
