@@ -25,8 +25,6 @@ jobs:
       - name: Configure WiX Toolset path
         shell: powershell
         run: |
-            chcp 65001 | Out-Null
-            
             # 查找 WiX 安装路径（GitHub Actions 预装的 WiX 通常在以下位置）
             $wixPaths = @(
               "${env:ProgramFiles(x86)}\WiX Toolset v3.14\bin",
@@ -142,16 +140,9 @@ jobs:
           java -version
           echo JAVA_HOME: %JAVA_HOME%
 
-      - name: 更新 Maven 插件元数据
-        shell: bash
-        run: mvn -U org.apache.maven.plugins:maven-plugin-plugin:descriptor
-
       - name: 执行打包 (Windows EXE)
         shell: powershell  # 明确
         run: |
-          $env:MAVEN_OPTS = "-Dfile.encoding=UTF-8"
-          $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
-          $env:JPACKAGE_DEBUG = "true"  # 启用 jpackage 调试
           mvn -X clean jfx:package -DAPP_TYPE=exe
 
       - name: 显示项目结构 (Windows 兼容)
