@@ -67,7 +67,7 @@ jobs:
       - name: 重命名 EXE 文件
         shell: pwsh
         run: |
-          $outputDir = "target\jfx\native"
+          $outputDir = "target\javafx"
           $originalFile = Get-ChildItem -Path $outputDir -Filter "*.exe" | Select-Object -First 1
           
           if ($originalFile) {
