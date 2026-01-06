@@ -22,26 +22,48 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
           cache: 'maven'
-      - name: Install WiX Toolset
+      - name: Configure WiX Toolset path
         shell: powershell
         run: |
-            # 使用 Chocolatey 安装 WiX（GitHub Actions Windows 环境预装了 Chocolatey）
-            choco install wixtoolset -y --version=3.11.2
+            chcp 65001 | Out-Null
             
-            # 将 WiX 添加到 PATH
-            $wixPath = "${env:ProgramFiles(x86)}\WiX Toolset v3.11\bin"
-            if (-not (Test-Path $wixPath)) {
-              $wixPath = "${env:ProgramFiles}\WiX Toolset v3.11\bin"
+            # 查找 WiX 安装路径（GitHub Actions 预装的 WiX 通常在以下位置）
+            $wixPaths = @(
+              "${env:ProgramFiles(x86)}\WiX Toolset v3.14\bin",
+              "${env:ProgramFiles}\WiX Toolset v3.14\bin",
+              "${env:ProgramFiles(x86)}\WiX Toolset v3.11\bin",
+              "${env:ProgramFiles}\WiX Toolset v3.11\bin",
+              "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+              "C:\Program Files\WiX Toolset v3.14\bin"
+            )
+            
+            $foundPath = $null
+            foreach ($path in $wixPaths) {
+              if (Test-Path "$path\light.exe") {
+                $foundPath = $path
+                Write-Output "Found WiX Toolset at: $path"
+                break
+              }
             }
             
-            if (Test-Path $wixPath) {
-              $env:PATH = "$wixPath;$env:PATH"
-              echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-              Write-Output "WiX Toolset installed successfully at $wixPath"
-            } else {
-              Write-Error "WiX Toolset installation failed or path not found"
+            if ($null -eq $foundPath) {
+              # 尝试使用 where 命令查找 light.exe
+              $whereResult = where.exe light.exe 2>&1
+              if ($whereResult -match "light\.exe") {
+                $foundPath = Split-Path $whereResult -Parent
+                Write-Output "Found WiX Toolset using where command at: $foundPath"
+              }
+            }
+            
+            if ($null -eq $foundPath) {
+              Write-Error "Could not find WiX Toolset installation. Please check if it's installed."
               exit 1
             }
+            
+            # 将 WiX 路径添加到 PATH
+            $env:PATH = "$foundPath;$env:PATH"
+            echo "$foundPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Output "Added WiX Toolset to PATH: $foundPath"
       - name: Configure Maven settings for Windows
         shell: powershell
         run: |
