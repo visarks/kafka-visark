@@ -1,11 +1,11 @@
-name: macos-x86_64-dmg
+name: macos-arm64-dmg
 
 # 监听 push 事件（可根据需求改为 pull_request）
 on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: macos-15-intel
+    runs-on: macos-15-arm64
     env:
       APP_VERSION: ""
     # 作业级条件：只有提交信息包含 [build] 时才运行整个作业
@@ -42,5 +42,5 @@ jobs:
       - name: 上传dmg构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.dmg
+          name: kafka-visark-${{ env.APP_VERSION }}-macos-arm64.dmg
           path: target/javafx/*.dmg

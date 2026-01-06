@@ -1,4 +1,4 @@
-name: macos_dmg
+name: macos-x86_64-pkg
 
 # 监听 push 事件（可根据需求改为 pull_request）
 on: workflow_dispatch
@@ -42,5 +42,5 @@ jobs:
       - name: 上传dmg构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-macos-arm64.dmg
+          name: kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.dmg
           path: target/javafx/*.dmg
