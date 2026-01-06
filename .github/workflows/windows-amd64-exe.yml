@@ -51,7 +51,7 @@ jobs:
 
       - name: 执行打包 (Windows EXE)
         shell: bash
-        run: mvn -e clean jfx:package -DAPP_TYPE=exe -DAPP_VERSION=%APP_VERSION%
+        run: mvn -e clean jfx:package -DAPP_TYPE=exe -Dfile.encoding=UTF-8 -Dproject.build.sourceEncoding=UTF-8
 
       - name: 显示项目结构 (Windows 兼容)
         shell: bash
