@@ -1,0 +1,41 @@
+name: macos_dmg
+
+# 监听 push 事件（可根据需求改为 pull_request）
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: macos-15-intel
+    # 作业级条件：只有提交信息包含 [build] 时才运行整个作业
+    #if: "contains(github.event.head_commit.message, '[build-pkg]')"
+    steps:
+      - name: 检出项目
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: 设置java
+        uses: actions/setup-java@v4  # 官方 Java 配置动作
+        with:
+          java-version: '25.0.1'  # 指定 Java 版本
+          distribution: 'zulu'  # 选择 OpenJDK 发行版（如 temurin、zulu 等）
+          cache: 'maven'  # 可选：缓存 Maven 依赖（加速构建）
+      - name: 验证java
+        run: |
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+      - name: 执行打包
+        run: |
+          chmod +x ./package/pack.sh
+          ./package/pack.sh
+      - name: 显示项目结构
+        run: |
+          brew install tree
+          echo "--- 项目目录结构 ---"
+          tree -L 3
+      - name: 列举生成的构建物
+        run: ls -lh dist
+      - name: 上传dmg构建物
+        uses: actions/upload-artifact@v4
+        with:
+          name: kafka-visark.dmg
+          path: target/javafx/*.dmg
