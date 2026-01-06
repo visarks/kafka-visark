@@ -22,18 +22,34 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
 
-      - name: 解析版本号 (PowerShell)
+      - name: 解析版本号
         shell: pwsh
         run: |
-          # 从 pom.xml 获取版本号
-          $rawVersion = mvn help:evaluate -Dexpression=project.version -q -DforceStdout 2>&1 | Out-String
-          $cleanVersion = $rawVersion.Trim() -replace '-SNAPSHOT$', ''
-          
-          # 正确设置 GitHub Actions 环境变量
+          # 使用更可靠的 Maven 命令
+          $versionRaw = mvn org.apache.maven.plugins:maven-help-plugin:3.3.0:evaluate `
+            -Dexpression=project.version `
+            -q `
+            -DforceStdout `
+            -Doutput="false" 2>&1 | Out-String
+
+          # 清理输出（移除 XML 警告/错误）
+          $lines = $versionRaw -split "`n"
+          $versionLine = $lines | Where-Object { $_ -match '^\d+\.\d+\.\d+.*$' } | Select-Object -First 1
+
+          if (-not $versionLine) {
+            Write-Host "❌ 无法从输出中提取版本号，使用 XML 解析作为备选"
+            $pomContent = Get-Content -Path "pom.xml" -Raw
+            $xml = [xml]$pomContent
+            $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+            $ns.AddNamespace("pom", "http://maven.apache.org/POM/4.0.0")
+            $versionLine = $xml.SelectSingleNode("//pom:version", $ns).InnerText
+          }
+
+          $cleanVersion = $versionLine.Trim() -replace '-SNAPSHOT$', ''
+
           "APP_VERSION=$cleanVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          
+
           Write-Host "✅ 项目版本: $cleanVersion"
-          Write-Host "🛠️ 环境变量已设置: APP_VERSION=$cleanVersion"
 
       - name: 验证 Java
         shell: cmd
