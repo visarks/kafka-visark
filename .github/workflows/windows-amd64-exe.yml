@@ -25,6 +25,11 @@ jobs:
       - name: Configure Maven settings for Windows
         shell: powershell
         run: |
+          # 1. 设置系统区域设置
+          Set-WinSystemLocale -SystemLocale zh-CN
+          Set-WinHomeLocation -GeoId 244
+          Set-WinUserLanguageList -LanguageList zh-CN -Force
+          
           $m2Path = "$env:USERPROFILE\.m2"
           if (-not (Test-Path $m2Path)) {
             New-Item -Path $m2Path -ItemType Directory | Out-Null
