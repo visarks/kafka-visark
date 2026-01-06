@@ -152,7 +152,7 @@ jobs:
           $env:MAVEN_OPTS = "-Dfile.encoding=UTF-8"
           $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
           $env:JPACKAGE_DEBUG = "true"  # 启用 jpackage 调试
-          mvn -X clean jfx:package -DAPP_TYPE=exe -Dfile.encoding=UTF-8 -Dproject.build.sourceEncoding=UTF-8
+          mvn -X clean jfx:package -DAPP_TYPE=exe
 
       - name: 显示项目结构 (Windows 兼容)
         shell: bash
