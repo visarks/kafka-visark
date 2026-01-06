@@ -6,6 +6,8 @@ on: workflow_dispatch
 jobs:
   build:
     runs-on: macos-15-intel
+    env:
+      APP_VERSION: ""
     # 作业级条件：只有提交信息包含 [build] 时才运行整个作业
     #if: "contains(github.event.head_commit.message, '[build-pkg]')"
     steps:
@@ -19,6 +21,10 @@ jobs:
           java-version: '21'  # 指定 Java 版本
           distribution: 'zulu'  # 选择 OpenJDK 发行版（如 temurin、zulu 等）
           cache: 'maven'  # 可选：缓存 Maven 依赖（加速构建）
+      - name: 解析版本号
+        run: |
+          VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          echo "✅ 原始版本: $VERSION"
       - name: 验证java
         run: |
           java -version
@@ -37,5 +43,5 @@ jobs:
       - name: 上传dmg构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark.dmg
+          name: kafka-visark-${{ env.APP_VERSION }}-macos-arm.dmg
           path: target/javafx/*.dmg
