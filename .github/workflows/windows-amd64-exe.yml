@@ -1,46 +1,90 @@
 name: windows-amd64-exe
 
-# 监听 push 事件（可根据需求改为 pull_request）
-on: workflow_dispatch
+on:
+  workflow_dispatch
 
 jobs:
   build:
     runs-on: windows-2022
     env:
       APP_VERSION: ""
-    # 作业级条件：只有提交信息包含 [build] 时才运行整个作业
-    #if: "contains(github.event.head_commit.message, '[build-pkg]')"
+
     steps:
       - name: 检出项目
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: 设置java
-        uses: actions/setup-java@v4  # 官方 Java 配置动作
+
+      - name: 设置 Java
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'zulu'
           cache: 'maven'
-      - name: 解析版本号
+
+      - name: 解析版本号 (PowerShell)
+        shell: pwsh
         run: |
-          VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
-          echo "✅ 原始版本: $VERSION"
-      - name: 验证java
+          # 从 pom.xml 获取版本号
+          $rawVersion = mvn help:evaluate -Dexpression=project.version -q -DforceStdout 2>&1 | Out-String
+          $cleanVersion = $rawVersion.Trim() -replace '-SNAPSHOT$', ''
+          
+          # 正确设置 GitHub Actions 环境变量
+          "APP_VERSION=$cleanVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          
+          Write-Host "✅ 项目版本: $cleanVersion"
+          Write-Host "🛠️ 环境变量已设置: APP_VERSION=$cleanVersion"
+
+      - name: 验证 Java
+        shell: cmd
         run: |
           java -version
-          echo "JAVA_HOME: $JAVA_HOME"
-      - name: 执行打包
+          echo JAVA_HOME: %JAVA_HOME%
+
+      - name: 执行打包 (Windows EXE)
+        shell: cmd
+        run: mvn clean javafx:jlink -DAPP_TYPE=exe -DAPP_VERSION=%APP_VERSION%
+
+      - name: 显示项目结构 (Windows 兼容)
+        shell: pwsh
         run: |
-          mvn clean jfx:package -DAPP_TYPE=exe
-      - name: 显示项目结构
-        run: |
-          brew install tree
-          echo "--- 项目目录结构 ---"
-          tree -L 3
+          Write-Host "--- 项目目录结构 ---"
+          Get-ChildItem -Path . -Depth 3 | Format-Table FullName
+
       - name: 列举生成的构建物
-        run: ls -lh target/javafx
-      - name: 上传exe构建物
+        shell: pwsh
+        run: |
+          $outputDir = "target\jfx\native"
+          if (Test-Path $outputDir) {
+            Write-Host "✅ 找到构建输出目录: $outputDir"
+            Get-ChildItem $outputDir -Recurse | Format-List
+          } else {
+            Write-Host "❌ 未找到输出目录，检查构建过程"
+            Get-ChildItem target -Recurse
+            exit 1
+          }
+
+      - name: 重命名 EXE 文件
+        shell: pwsh
+        run: |
+          $outputDir = "target\jfx\native"
+          $originalFile = Get-ChildItem -Path $outputDir -Filter "*.exe" | Select-Object -First 1
+          
+          if ($originalFile) {
+            $newName = "kafka-visark-$env:APP_VERSION-windows-amd64.exe"
+            $newPath = Join-Path $outputDir $newName
+          
+            Rename-Item -Path $originalFile.FullName -NewName $newName -Force
+            Write-Host "✅ 重命名成功: $newName"
+            echo "ARTIFACT_PATH=$newPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            Write-Host "❌ 未找到 EXE 文件"
+            exit 1
+          }
+
+      - name: 上传 EXE 构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-macos-arm64.exe
-          path: target/javafx/*.exe
+          name: kafka-visark-${{ env.APP_VERSION }}-windows-amd64
+          path: ${{ env.ARTIFACT_PATH }}
+          retention-days: 30
