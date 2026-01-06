@@ -1,7 +1,9 @@
 name: windows-amd64-exe
 
 on:
-  workflow_dispatch
+  workflow_dispatch:  # 支持手动触发
+  release:
+    types: [published]  # 发布版本时自动触发
 
 jobs:
   build:

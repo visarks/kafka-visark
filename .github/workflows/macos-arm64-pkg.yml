@@ -1,7 +1,10 @@
 name: macos-arm64-pkg
 
 # 监听 push 事件（可根据需求改为 pull_request）
-on: workflow_dispatch
+on:
+  workflow_dispatch:  # 支持手动触发
+  release:
+    types: [published]  # 发布版本时自动触发
 
 jobs:
   build:
