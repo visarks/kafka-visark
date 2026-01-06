@@ -16,28 +16,42 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: 配置 Maven settings
+      - name: 创建 Maven 目录并配置 settings
+        shell: pwsh
         run: |
-          echo "<settings>
-            <mirrors>
-              <mirror>
-                <id>central-mirror</id>
-                <mirrorOf>central</mirrorOf>
-                <url>https://repo1.maven.org/maven2</url>
-              </mirror>
-            </mirrors>
-            <profiles>
-              <profile>
-                <id>default</id>
-                <properties>
-                  <http.agent>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36</http.agent>
-                </properties>
-              </profile>
-            </profiles>
-            <activeProfiles>
-              <activeProfile>default</activeProfile>
-            </activeProfiles>
-          </settings>" > $HOME/.m2/settings.xml
+            # 创建 .m2 目录（如果不存在）
+            $m2Dir = "$env:USERPROFILE\.m2"
+            if (-not (Test-Path $m2Dir)) {
+              New-Item -Path $m2Dir -ItemType Directory -Force | Out-Null
+              Write-Host "✅ 创建 Maven 配置目录: $m2Dir"
+            }
+            
+            # 写入 settings.xml 配置
+            @"
+            <settings>
+              <mirrors>
+                <mirror>
+                  <id>central-mirror</id>
+                  <mirrorOf>central</mirrorOf>
+                  <url>https://repo1.maven.org/maven2</url>
+                </mirror>
+              </mirrors>
+              <profiles>
+                <profile>
+                  <id>default</id>
+                  <properties>
+                    <http.agent>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36</http.agent>
+                  </properties>
+                </profile>
+              </profiles>
+              <activeProfiles>
+                <activeProfile>default</activeProfile>
+              </activeProfiles>
+            </settings>
+            "@ | Out-File -FilePath "$m2Dir\settings.xml" -Encoding UTF8 -Force
+            
+            Write-Host "✅ Maven settings 已配置"
+            Get-Content "$m2Dir\settings.xml"
       - name: 设置 Java
         uses: actions/setup-java@v4
         with:
