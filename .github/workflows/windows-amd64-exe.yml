@@ -22,7 +22,52 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
           cache: 'maven'
-
+      - name: Configure Maven settings for Windows
+        shell: powershell
+        run: |
+          $m2Path = "$env:USERPROFILE\.m2"
+          if (-not (Test-Path $m2Path)) {
+            New-Item -Path $m2Path -ItemType Directory | Out-Null
+          }
+          
+          $settingsContent = @"
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>aliyunmaven</id>
+                <mirrorOf>central</mirrorOf>
+                <name>阿里云公共仓库</name>
+                <url>https://maven.aliyun.com/repository/public</url>
+              </mirror>
+            </mirrors>
+            <profiles>
+              <profile>
+                <id>default</id>
+                <repositories>
+                  <repository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>default</activeProfile>
+            </activeProfiles>
+          </settings>
+          "@
+          
+          $settingsContent | Out-File -FilePath "$m2Path\settings.xml" -Encoding UTF8
       - name: 解析版本号 (GitHub Actions 内置)
         id: get-version
         run: |
