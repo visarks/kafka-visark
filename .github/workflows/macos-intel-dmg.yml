@@ -31,8 +31,7 @@ jobs:
           echo "JAVA_HOME: $JAVA_HOME"
       - name: 执行打包
         run: |
-          chmod +x ./package/pack.sh
-          ./package/pack.sh
+          mvn clean jfx:package -DAPP_TYPE=dmg
       - name: 显示项目结构
         run: |
           brew install tree
@@ -43,5 +42,5 @@ jobs:
       - name: 上传dmg构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-macos-intel.dmg
+          name: kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.dmg
           path: target/javafx/*.dmg
