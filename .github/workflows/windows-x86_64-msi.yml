@@ -1,9 +1,9 @@
-name: windows-amd64-exe
+name: windows-x86_64-msi
 
 on:
   workflow_dispatch:  # 支持手动触发
   release:
-    types: [published]  # 发布版本时自动触发
+    types: [published]
 
 jobs:
   build:
@@ -140,10 +140,10 @@ jobs:
           java -version
           echo JAVA_HOME: %JAVA_HOME%
 
-      - name: 执行打包 (Windows EXE)
+      - name: 执行打包 (Windows msi)
         shell: powershell  # 明确
         run: |
-          mvn -X clean jfx:package -DAPP_TYPE=exe
+          mvn -X clean jfx:package -DAPP_TYPE=msi
 
       - name: 显示项目结构 (Windows 兼容)
         shell: bash
@@ -153,8 +153,8 @@ jobs:
             tree /f /a
       - name: 列举生成的构建物
         run: dir target/javafx
-      - name: 上传 EXE 构建物
+      - name: 上传 msi 构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-windows-amd64.exe
-          path: target/javafx/*.exe
+          name: kafka-visark-${{ env.APP_VERSION }}-windows-x86_64.msi
+          path: target/javafx/*.msi

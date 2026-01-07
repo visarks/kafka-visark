@@ -1,0 +1,160 @@
+name: windows-x86_64-exe
+
+on:
+  workflow_dispatch:  # 支持手动触发
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    env:
+      APP_VERSION: ""
+
+    steps:
+      - name: 检出项目
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: 设置 Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+          cache: 'maven'
+      - name: Configure WiX Toolset path
+        shell: powershell
+        run: |
+            # 查找 WiX 安装路径（GitHub Actions 预装的 WiX 通常在以下位置）
+            $wixPaths = @(
+              "${env:ProgramFiles(x86)}\WiX Toolset v3.14\bin",
+              "${env:ProgramFiles}\WiX Toolset v3.14\bin",
+              "${env:ProgramFiles(x86)}\WiX Toolset v3.11\bin",
+              "${env:ProgramFiles}\WiX Toolset v3.11\bin",
+              "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+              "C:\Program Files\WiX Toolset v3.14\bin"
+            )
+            
+            $foundPath = $null
+            foreach ($path in $wixPaths) {
+              if (Test-Path "$path\light.exe") {
+                $foundPath = $path
+                Write-Output "Found WiX Toolset at: $path"
+                break
+              }
+            }
+            
+            if ($null -eq $foundPath) {
+              # 尝试使用 where 命令查找 light.exe
+              $whereResult = where.exe light.exe 2>&1
+              if ($whereResult -match "light\.exe") {
+                $foundPath = Split-Path $whereResult -Parent
+                Write-Output "Found WiX Toolset using where command at: $foundPath"
+              }
+            }
+            
+            if ($null -eq $foundPath) {
+              Write-Error "Could not find WiX Toolset installation. Please check if it's installed."
+              exit 1
+            }
+            
+            # 将 WiX 路径添加到 PATH
+            $env:PATH = "$foundPath;$env:PATH"
+            echo "$foundPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Output "Added WiX Toolset to PATH: $foundPath"
+      - name: Configure Maven settings for Windows
+        shell: powershell
+        run: |
+          # 1. 设置系统区域设置
+          Set-WinSystemLocale -SystemLocale zh-CN
+          Set-WinHomeLocation -GeoId 244
+          Set-WinUserLanguageList -LanguageList zh-CN -Force
+          
+          $m2Path = "$env:USERPROFILE\.m2"
+          if (-not (Test-Path $m2Path)) {
+            New-Item -Path $m2Path -ItemType Directory | Out-Null
+          }
+          
+          $settingsContent = @"
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>aliyunmaven</id>
+                <mirrorOf>central</mirrorOf>
+                <name>阿里云公共仓库</name>
+                <url>https://maven.aliyun.com/repository/public</url>
+              </mirror>
+            </mirrors>
+            <profiles>
+              <profile>
+                <id>default</id>
+                <repositories>
+                  <repository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>default</activeProfile>
+            </activeProfiles>
+          </settings>
+          "@
+          
+          $settingsContent | Out-File -FilePath "$m2Path\settings.xml" -Encoding UTF8
+      - name: 解析版本号 (GitHub Actions 内置)
+        id: get-version
+        run: |
+          # 读取 pom.xml 作为文本
+          $pom = Get-Content -Path pom.xml -Raw
+
+          # 使用正则提取版本
+          if ($pom -match '<version>([\d\.]+(-SNAPSHOT)?)</version>') {
+            $rawVersion = $matches[1]
+            $cleanVersion = $rawVersion -replace '-SNAPSHOT$', ''
+
+            "APP_VERSION=$cleanVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            echo "version=$cleanVersion" >> $env:GITHUB_OUTPUT
+
+            Write-Host "✅ 项目版本: $cleanVersion"
+          } else {
+            Write-Host "❌ 无法在 pom.xml 中找到 <version> 标签"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: 验证 Java
+        shell: cmd
+        run: |
+          java -version
+          echo JAVA_HOME: %JAVA_HOME%
+
+      - name: 执行打包 (Windows EXE)
+        shell: powershell  # 明确
+        run: |
+          mvn -X clean jfx:package -DAPP_TYPE=exe
+
+      - name: 显示项目结构 (Windows 兼容)
+        shell: bash
+        run: |
+            choco install tree
+            echo "--- 项目目录结构 ---"
+            tree /f /a
+      - name: 列举生成的构建物
+        run: dir target/javafx
+      - name: 上传 EXE 构建物
+        uses: actions/upload-artifact@v4
+        with:
+          name: kafka-visark-${{ env.APP_VERSION }}-windows-x86_64.exe
+          path: target/javafx/*.exe
