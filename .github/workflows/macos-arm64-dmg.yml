@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15-arm64
     env:
       APP_VERSION: ""
     # 作业级条件：只有提交信息包含 [build] 时才运行整个作业
