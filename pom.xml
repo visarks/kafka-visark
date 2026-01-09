@@ -141,7 +141,7 @@
         <plugins>
             <plugin>
                 <groupId>io.gitee.podigua</groupId>
-                <artifactId>maven-jfx-plugin</artifactId>
+                <artifactId>jfx-maven-plugin</artifactId>
                 <version>0.0.5</version>
                 <configuration>
                     <type>app-image</type>
