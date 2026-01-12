@@ -142,10 +142,9 @@
             <plugin>
                 <groupId>io.gitee.podigua</groupId>
                 <artifactId>jfx-maven-plugin</artifactId>
-                <version>0.0.6</version>
+                <version>0.0.7</version>
                 <configuration>
-                    <type>app-image</type>
-                    <name>kafka-visark</name>
+                    <name>${APP_TYPE}</name>
                     <macPackageIdentifier>kafka-visark</macPackageIdentifier>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
                     <vendor>podigua</vendor>
