@@ -51,11 +51,6 @@ public class VisakApplication extends Application {
         HikariDataSource datasource = DatasourceUtils.getDatasource();
         Flyway flyway = Flyway.configure().dataSource(datasource).load();
         flyway.migrate();
-        Platform.Preferences preferences = Platform.getPreferences();
-        preferences.colorSchemeProperty().addListener((observable, oldValue, newValue) -> new ThemeChangeEvent().publish());
-        SettingClient.get();
-        subscribe();
-        new ThemeChangeEvent().publish();
     }
 
     private void subscribe() {
@@ -83,6 +78,11 @@ public class VisakApplication extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        Platform.Preferences preferences = Platform.getPreferences();
+        preferences.colorSchemeProperty().addListener((observable, oldValue, newValue) -> new ThemeChangeEvent().publish());
+        SettingClient.get();
+        subscribe();
+        new ThemeChangeEvent().publish();
         initMenu();
         boolean supported = Toolkit.getToolkit().getSystemMenu().isSupported();
         logger.info("是否支持系统菜单:{}", supported);

@@ -9,11 +9,11 @@
     <version>2.0.4</version>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>26</maven.compiler.source>
+        <maven.compiler.target>26</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>23.0.1</javafx.version>
-        <kafka.version>3.7.0</kafka.version>
+        <javafx.version>27-ea+10</javafx.version>
+        <kafka.version>4.2.0</kafka.version>
     </properties>
     <dependencies>
         <dependency>
@@ -126,16 +126,6 @@
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>4.31.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java-util</artifactId>
-            <version>4.31.1</version>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -144,7 +134,7 @@
                 <artifactId>jfx-maven-plugin</artifactId>
                 <version>0.0.7</version>
                 <configuration>
-                    <name>${APP_TYPE}</name>
+<!--                    <name>${APP_TYPE}</name>-->
                     <macPackageIdentifier>kafka-visark</macPackageIdentifier>
                     <mainClass>com.podigua.kafka.VisarkLauncher</mainClass>
                     <vendor>podigua</vendor>

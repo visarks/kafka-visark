@@ -2,11 +2,9 @@ package com.podigua.kafka.visark.home.convert;
 
 import com.podigua.kafka.visark.home.convert.deserialization.Base64Deserialization;
 import com.podigua.kafka.visark.home.convert.deserialization.HexDeserialization;
-import com.podigua.kafka.visark.home.convert.deserialization.ProtobufDeserialization;
 import com.podigua.kafka.visark.home.convert.deserialization.StringDeserialization;
 import com.podigua.kafka.visark.home.convert.serializable.Base64Serializable;
 import com.podigua.kafka.visark.home.convert.serializable.HexSerializable;
-import com.podigua.kafka.visark.home.convert.serializable.ProtobufSerializable;
 import com.podigua.kafka.visark.home.convert.serializable.StringSerializable;
 
 import java.nio.charset.Charset;
@@ -74,9 +72,6 @@ public class MessageConvertFactory {
         if (STRING_TYPE.equals(type)) {
             return STRING_SERIALIZABLE.computeIfAbsent(charset, k -> new StringSerializable(charset));
         }
-        if (PROTOBUF_TYPE.equals(type)) {
-            return new ProtobufSerializable(charset, protobuf);
-        }
         return null;
     }
 
@@ -89,10 +84,6 @@ public class MessageConvertFactory {
         }
         if (STRING_TYPE.equals(type)) {
             return STRING_DESERIALIZABLE.computeIfAbsent(charset, k -> new StringDeserialization(charset));
-        }
-
-        if (PROTOBUF_TYPE.equals(type)) {
-            return new ProtobufDeserialization(charset, protobuf);
         }
         return null;
     }
