@@ -2,8 +2,7 @@ package com.podigua.kafka.admin;
 
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.MemberDescription;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.ConsumerGroupState;
+import org.apache.kafka.common.GroupState;
 import org.apache.kafka.common.Node;
 
 import java.util.Collection;
@@ -12,14 +11,13 @@ import java.util.Collection;
  * 消费者详细信息
  *
  * @author podigua
- * @date 2024/03/24
  */
 public class ConsumerDetail {
     private String groupId;
     private boolean isSimpleConsumerGroup;
     private Collection<MemberDescription> members;
     private String partitionAssignor;
-    private ConsumerGroupState state = ConsumerGroupState.UNKNOWN;
+    private GroupState state = GroupState.UNKNOWN;
     private Node coordinator = Node.noNode();
 
 
@@ -28,7 +26,7 @@ public class ConsumerDetail {
         this.isSimpleConsumerGroup = description.isSimpleConsumerGroup();
         this.members = description.members();
         this.partitionAssignor = description.partitionAssignor();
-        this.state = description.state();
+        this.state = description.groupState();
         this.coordinator = description.coordinator();
     }
 
@@ -42,7 +40,7 @@ public class ConsumerDetail {
         this.isSimpleConsumerGroup = description.isSimpleConsumerGroup();
         this.members = description.members();
         this.partitionAssignor = description.partitionAssignor();
-        this.state = description.state();
+        this.state = description.groupState();
         this.coordinator = description.coordinator();
     }
 
@@ -63,7 +61,7 @@ public class ConsumerDetail {
         return partitionAssignor;
     }
 
-    public ConsumerGroupState state() {
+    public GroupState state() {
         return state;
     }
 

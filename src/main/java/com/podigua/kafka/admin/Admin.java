@@ -16,7 +16,6 @@ import java.util.Properties;
  * 管理
  *
  * @author podigua
- * @date 2024/03/21
  */
 
 public class Admin {
@@ -96,6 +95,10 @@ public class Admin {
     public Properties properties() {
         Properties result = new Properties();
         result.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        // 设置 socket 连接超时，使用用户配置的超时时间
+        result.put(AdminClientConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MS_CONFIG, this.timeout);
+        result.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, this.timeout);
+        result.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, this.timeout);
 
         if(this.security){
             if(this.protocol!=null){

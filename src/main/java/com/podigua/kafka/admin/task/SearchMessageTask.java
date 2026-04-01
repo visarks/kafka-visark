@@ -27,12 +27,17 @@ import java.util.stream.Collectors;
  * 搜索消息任务
  *
  * @author podigua
- * @date 2024/03/25
  */
 public class SearchMessageTask extends QueryTask<Long> {
     private static final Logger logger = LoggerFactory.getLogger(SearchMessageTask.class);
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private final AtomicLong counts = new AtomicLong(0);
+    /** poll 超时时间（毫秒） */
+    private static final int POLL_TIMEOUT_MS = 100;
+    /** 批量回调大小 */
+    private static final int BATCH_SIZE = 100;
+    /** 每个 Consumer 最大处理分区数 */
+    private static final int MAX_PARTITIONS_PER_CONSUMER = 5;
     /**
      * 主题
      */
@@ -91,42 +96,68 @@ public class SearchMessageTask extends QueryTask<Long> {
     }
 
     private void asyncProcess(Properties properties, List<Offset> offsets) {
-        Iterator<Offset> iterator = offsets.iterator();
-        while (iterator.hasNext()) {
-            Offset next = iterator.next();
-            if(!params.partitions().contains(next.topicPartition.partition())){
-                iterator.remove();
-            }
-        }
+        // 过滤分区
+        offsets.removeIf(offset -> !params.partitions().contains(offset.topicPartition.partition()));
+
+        // 将 offsets 分组，每组最多 MAX_PARTITIONS_PER_CONSUMER 个分区
+        List<List<Offset>> groups = partitionOffsets(offsets, MAX_PARTITIONS_PER_CONSUMER);
         List<Future<?>> futures = new ArrayList<>();
 
-        for (Offset offset : offsets) {
+        for (List<Offset> group : groups) {
             futures.add(ThreadUtils.virtual().submit(() -> {
                 try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
-                    consumer.assign(Collections.singletonList(offset.topicPartition));
+                    // assign 多个分区
+                    List<TopicPartition> partitions = group.stream()
+                            .map(Offset::topicPartition)
+                            .toList();
+                    consumer.assign(partitions);
+
                     long childStart = System.currentTimeMillis();
-                    logger.info("子任务开始查询,topic:{},partition:{},start:{},end:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), offset.start(), offset.end());
-                    consumer.seek(offset.topicPartition, offset.start);
+                    logger.info("子任务开始查询, partitions: {}", partitions.size());
+
+                    // seek 每个分区
+                    Map<TopicPartition, Long> endOffsets = new HashMap<>();
+                    for (Offset offset : group) {
+                        consumer.seek(offset.topicPartition, offset.start);
+                        endOffsets.put(offset.topicPartition, offset.end);
+                    }
+
+                    // 批量回调缓冲
+                    List<ConsumerRecord<byte[], byte[]>> batch = new ArrayList<>(BATCH_SIZE);
+
                     exit:
-                    while (true) {
-                        ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(10));
+                    while (!shutdown.get()) {
+                        ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(POLL_TIMEOUT_MS));
                         for (ConsumerRecord<byte[], byte[]> record : records) {
                             counts.getAndIncrement();
-                            if (shutdown.get()) {
-                                break exit;
+                            batch.add(record);
+                            // 批量回调
+                            if (batch.size() >= BATCH_SIZE) {
+                                batch.forEach(callback);
+                                batch.clear();
                             }
-                            callback.accept(record);
-                            if (record.offset() >= offset.end) {
-                                break exit;
+                            // 检查是否到达结束偏移
+                            TopicPartition tp = new TopicPartition(record.topic(), record.partition());
+                            Long endOffset = endOffsets.get(tp);
+                            if (endOffset != null && record.offset() >= endOffset) {
+                                endOffsets.remove(tp);
+                                if (endOffsets.isEmpty()) {
+                                    break exit;
+                                }
                             }
                         }
                     }
-                    logger.info("子任务查询结束,topic{},partition:{},耗时:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), (System.currentTimeMillis() - childStart));
+                    // 处理剩余消息
+                    if (!batch.isEmpty()) {
+                        batch.forEach(callback);
+                    }
+                    logger.info("子任务查询结束, partitions: {}, 耗时: {}ms", partitions.size(), System.currentTimeMillis() - childStart);
                 } catch (Exception e) {
                     logger.error("接收消息失败", e);
                 }
             }));
         }
+
         for (Future<?> future : futures) {
             try {
                 future.get();
@@ -136,30 +167,15 @@ public class SearchMessageTask extends QueryTask<Long> {
         }
     }
 
-    private void syncProcess(Properties properties, List<Offset> offsets) {
-        try (KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties)) {
-            consumer.assign(offsets.stream().map(Offset::topicPartition).collect(Collectors.toList()));
-            for (Offset offset : offsets) {
-                long childStart = System.currentTimeMillis();
-                logger.info("子任务开始查询,topic:{},partition:{},start:{},end:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), offset.start(), offset.end());
-                consumer.seek(offset.topicPartition, offset.start);
-                exit:
-                while (true) {
-                    ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(10));
-                    for (ConsumerRecord<byte[], byte[]> record : records) {
-                        counts.getAndIncrement();
-                        if (shutdown.get()) {
-                            break exit;
-                        }
-                        callback.accept(record);
-                        if (record.offset() >= offset.end) {
-                            break exit;
-                        }
-                    }
-                }
-                logger.info("子任务查询结束,topic{},partition:{},耗时:{}", offset.topicPartition.topic(), offset.topicPartition.partition(), (System.currentTimeMillis() - childStart));
-            }
+    /**
+     * 将 offsets 分组
+     */
+    private List<List<Offset>> partitionOffsets(List<Offset> offsets, int size) {
+        List<List<Offset>> groups = new ArrayList<>();
+        for (int i = 0; i < offsets.size(); i += size) {
+            groups.add(offsets.subList(i, Math.min(i + size, offsets.size())));
         }
+        return groups;
     }
 
     private List<Offset> compOffset(List<TopicOffset> list, List<TopicOffset> times) {
@@ -180,24 +196,27 @@ public class SearchMessageTask extends QueryTask<Long> {
             return result;
         }
 
+        // 使用 Map 直接查找，避免每次 stream.filter
+        Map<Integer, TopicOffset> offsetMap = topicOffsets.stream()
+                .collect(Collectors.toMap(TopicOffset::partition, to -> to));
+
         for (TopicOffset time : times) {
-            TopicOffset topicOffset = topicOffsets.stream().filter(topicoffset -> time.partition() == topicoffset.partition()).findFirst().orElse(null);
+            TopicOffset topicOffset = offsetMap.get(time.partition());
             if (topicOffset == null) {
                 continue;
             }
             if (OffsetType.earliest.equals(params.offsetType())) {
                 if (time.start() >= topicOffset.start() && time.start() <= topicOffset.end()) {
-                    var start = Math.max(topicOffset.start(), (time.start() - params.count()));
+                    long start = Math.max(topicOffset.start(), time.start() - params.count());
                     if (time.start() > start) {
                         result.add(new Offset(topicOffset.topicPartition(), start, time.start()));
                     }
                 }
-
             } else {
                 if (time.end() >= topicOffset.start() && time.end() <= topicOffset.end()) {
                     long end = Math.min(topicOffset.end(), time.start() + params.count());
                     if (end > time.start()) {
-                        result.add(new Offset(topicOffset.topicPartition(), time.start(), +end - 1));
+                        result.add(new Offset(topicOffset.topicPartition(), time.start(), end - 1));
                     }
                 }
             }
@@ -213,7 +232,7 @@ public class SearchMessageTask extends QueryTask<Long> {
             }
             if (OffsetType.earliest.equals(params.offsetType())) {
                 if (params.offset() >= topicOffset.start() && params.offset() <= topicOffset.end()) {
-                    var start = Math.max(topicOffset.start(), (params.offset() - params.count()));
+                    long start = Math.max(topicOffset.start(), params.offset() - params.count());
                     if (params.offset() > start) {
                         result.add(new Offset(topicOffset.topicPartition(), start, params.offset() - 1));
                     }
@@ -222,7 +241,7 @@ public class SearchMessageTask extends QueryTask<Long> {
                 if (params.offset() >= topicOffset.start() && params.offset() <= topicOffset.end()) {
                     long end = Math.min(topicOffset.end(), params.offset() + params.count());
                     if (end > params.offset()) {
-                        result.add(new Offset(topicOffset.topicPartition(), params.offset(), +end - 1));
+                        result.add(new Offset(topicOffset.topicPartition(), params.offset(), end - 1));
                     }
                 }
             }

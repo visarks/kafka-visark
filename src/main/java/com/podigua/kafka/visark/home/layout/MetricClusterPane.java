@@ -20,11 +20,14 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.util.Duration;
-import org.apache.kafka.clients.admin.ConsumerGroupListing;
+import org.apache.kafka.clients.admin.GroupListing;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
-import org.apache.kafka.common.Node;
+import org.apache.kafka.clients.admin.ListGroupsResult;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -67,8 +70,9 @@ public class MetricClusterPane extends ContentBorderPane {
     private void initChart() {
         KafkaAdminClient client = AdminManger.get(this.value.clusterId());
         try {
-            Collection<ConsumerGroupListing> listings = client.listConsumerGroups().all().get();
-            for (ConsumerGroupListing listing : listings) {
+            ListGroupsResult result = client.listGroups();
+            Collection<GroupListing> groups = result.all().get();
+            for (GroupListing listing : groups) {
                 String groupId = listing.groupId();
                 ConsumerTagOffsetChart chart = new ConsumerTagOffsetChart(new CategoryAxis(), new NumberAxis(), groupId);
                 this.charts.add(chart);

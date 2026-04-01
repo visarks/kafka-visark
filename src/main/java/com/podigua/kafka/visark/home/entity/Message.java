@@ -17,7 +17,6 @@ import java.util.List;
  * 消息
  *
  * @author podigua
- * @date 2024/03/25
  */
 public class Message {
     private final long millis;
@@ -35,7 +34,7 @@ public class Message {
         this.partition.set(record.partition());
         this.offset.set(record.offset());
         this.millis = record.timestamp();
-        this.timestamp.set(LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        this.timestamp.set(LocalDateTime.ofInstant(Instant.ofEpochMilli(record.timestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")));
         this.key.set(keyDeserializer.deserialize(record.key()));
         this.value.set(valueDeserializer.deserialize(record.value()));
         record.headers().forEach(header -> {
@@ -104,12 +103,12 @@ public class Message {
 
 
     /**
-     * 排序
+     * 排序 - 使用毫秒时间戳，比字符串排序更准确高效
      *
      * @return {@link String}
      */
     public String sort() {
-        return this.timestamp.get();
+        return String.format("%019d", this.millis);
     }
 
     /**

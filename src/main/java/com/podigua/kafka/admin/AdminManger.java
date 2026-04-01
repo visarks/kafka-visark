@@ -3,16 +3,16 @@ package com.podigua.kafka.admin;
 import com.podigua.kafka.visark.cluster.entity.ClusterProperty;
 import com.podigua.kafka.visark.setting.SettingClient;
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.KafkaFuture;
-import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -20,37 +20,111 @@ import java.util.stream.Collectors;
  * Admin 管理
  *
  * @author podigua
- * @date 2024/03/21
  */
 
 public class AdminManger {
     private static final Logger logger = LoggerFactory.getLogger(AdminManger.class);
     private final static Map<String, KafkaAdminClient> CLIENTS = new HashMap<>();
     private final static Map<String, ClusterProperty> PROPERTY = new HashMap<>();
+    // 正在连接中的客户端，用于取消时关闭
+    private final static Map<String, KafkaAdminClient> CONNECTING = new HashMap<>();
+
+    /** 连接验证超时（秒） */
+    private static final int CONNECT_TIMEOUT_SECONDS = 15;
+    /** Socket 连接超时（毫秒）- 网络差时需要更长 */
+    private static final int SOCKET_TIMEOUT_MS = 10000;
+
+    /**
+     * Socket 验证 bootstrap servers 是否可达
+     *
+     * @param bootstrapServers bootstrap servers 配置，如 "host1:9092,host2:9092"
+     * @return 是否至少有一个地址可达
+     */
+    public static boolean socketVerify(String bootstrapServers) {
+        if (bootstrapServers == null || bootstrapServers.isEmpty()) {
+            return false;
+        }
+        String[] servers = bootstrapServers.split(",");
+        for (String server : servers) {
+            String[] parts = server.trim().split(":");
+            if (parts.length != 2) {
+                continue;
+            }
+            String host = parts[0].trim();
+            int port = Integer.parseInt(parts[1].trim());
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(host, port), SOCKET_TIMEOUT_MS);
+                logger.info("Socket 验证成功: {}:{}", host, port);
+                return true;
+            } catch (Exception e) {
+                logger.error("Socket 验证失败: {}:{}", host, port, e.getMessage());
+            }
+        }
+        return false;
+    }
 
 
     /**
-     * 连接
+     * 连接并验证
      *
      * @param property 属性
      * @return {@link KafkaAdminClient}
      */
     public static KafkaAdminClient connect(ClusterProperty property) {
-        PROPERTY.put(property.getId(), property);
+        String clusterId = property.getId();
+        PROPERTY.put(clusterId, property);
         Admin admin = new Admin(property);
         KafkaAdminClient client = null;
         try {
-            long start=System.currentTimeMillis();
+            long start = System.currentTimeMillis();
+
+            // 先进行 Socket 验证，快速排除不可达地址
+            if (!socketVerify(admin.bootstrapServers())) {
+                PROPERTY.remove(clusterId);
+                throw new TimeoutException("无法连接到任何 Kafka 服务器: " + admin.bootstrapServers());
+            }
+
             client = (KafkaAdminClient) AdminClient.create(admin.properties());
-            DescribeClusterResult result = client.describeCluster(
-                    new DescribeClusterOptions().timeoutMs(admin.timeout())
-            );
-            result.clusterId().get();
-            logger.info("连接时长:{}",(System.currentTimeMillis()-start));
+            // 暂存正在连接的客户端，以便取消时能关闭
+            CONNECTING.put(clusterId, client);
+            DescribeClusterResult result = client.describeCluster();
+            String id = result.clusterId()
+                    .toCompletionStage()
+                    .toCompletableFuture()
+                    .orTimeout(admin.timeout(), TimeUnit.SECONDS)
+                    .get();
+            logger.info("连接集群成功, clusterId: {}, 耗时: {}ms", id, System.currentTimeMillis() - start);
+            return client;
         } catch (Exception e) {
+            // 连接失败时关闭客户端并清理
+            if (client != null) {
+                try {
+                    client.close(Duration.ofSeconds(5));
+                } catch (Exception ignored) {
+                }
+            }
+            PROPERTY.remove(clusterId);
             throw new RuntimeException(e);
+        } finally {
+            CONNECTING.remove(clusterId);
         }
-        return client;
+    }
+
+    /**
+     * 取消正在进行的连接
+     *
+     * @param clusterId 集群 ID
+     */
+    public static void cancelConnect(String clusterId) {
+        KafkaAdminClient client = CONNECTING.remove(clusterId);
+        if (client != null) {
+            try {
+                client.close(Duration.ofSeconds(1));
+                logger.info("已取消连接, clusterId: {}", clusterId);
+            } catch (Exception ignored) {
+            }
+            PROPERTY.remove(clusterId);
+        }
     }
 
     /**
@@ -136,33 +210,32 @@ public class AdminManger {
             TopicDescription topicDescription = client.describeTopics(Collections.singleton(topic))
                     .allTopicNames().get().get(topic);
             Set<TopicPartition> topicPartitions = topicDescription.partitions().stream()
-                    .map(partitionInfo -> new TopicPartition(topic, partitionInfo.partition()))
+                    .map(p -> new TopicPartition(topic, p.partition()))
                     .collect(Collectors.toSet());
-            Map<TopicPartition, OffsetSpec> offsetMap = topicPartitions.stream()
-                    .collect(Collectors.toMap(
-                            tp -> tp,
-                            tp -> OffsetSpec.latest()
-                    ));
-            Map<TopicPartition, OffsetSpec> earliestOffsetMap = topicPartitions.stream()
-                    .collect(Collectors.toMap(
-                            tp -> tp,
-                            tp -> OffsetSpec.earliest()
-                    ));
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> latestOffsets =
-                    client.listOffsets(offsetMap).all().get();
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> earliestOffsets =
-                    client.listOffsets(earliestOffsetMap).all().get();
-            for (TopicPartition tp : topicPartitions) {
-                long earliestOffset = earliestOffsets.get(tp).offset();
-                long latestOffset = latestOffsets.get(tp).offset();
-                result.add(new TopicOffset(tp, earliestOffset, latestOffset));
-            }
-            return result;
 
+            Map<TopicPartition, OffsetSpec> latestSpec = topicPartitions.stream()
+                    .collect(Collectors.toMap(tp -> tp, _ -> OffsetSpec.latest()));
+            Map<TopicPartition, OffsetSpec> earliestSpec = topicPartitions.stream()
+                    .collect(Collectors.toMap(tp -> tp, _ -> OffsetSpec.earliest()));
+
+            // 并行查询 earliest 和 latest 偏移量
+            CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> latestFuture =
+                    client.listOffsets(latestSpec).all().toCompletionStage().toCompletableFuture();
+            CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> earliestFuture =
+                    client.listOffsets(earliestSpec).all().toCompletionStage().toCompletableFuture();
+
+            CompletableFuture.allOf(latestFuture, earliestFuture).join();
+
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> latestOffsets = latestFuture.get();
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> earliestOffsets = earliestFuture.get();
+
+            for (TopicPartition tp : topicPartitions) {
+                result.add(new TopicOffset(tp, earliestOffsets.get(tp).offset(), latestOffsets.get(tp).offset()));
+            }
         } catch (Exception e) {
             logger.error("获取主题偏移量失败，clusterId: {}, topic: {}", clusterId, topic, e);
-            return result;
         }
+        return result;
     }
 
     /**
@@ -177,37 +250,38 @@ public class AdminManger {
         List<TopicOffset> result = new ArrayList<>();
         try {
             TopicDescription topicDesc = client.describeTopics(Collections.singleton(topic))
-                    .allTopicNames().get(10, TimeUnit.SECONDS).get(topic);
+                    .allTopicNames().get().get(topic);
             Set<TopicPartition> partitions = topicDesc.partitions().stream()
                     .map(p -> new TopicPartition(topic, p.partition()))
                     .collect(Collectors.toSet());
 
-            // 2. 构建三种 OffsetSpec 查询
-            Map<TopicPartition, OffsetSpec> timeOffSpec = new HashMap<>();
-            Map<TopicPartition, OffsetSpec> earliestOffSpec = new HashMap<>();
-            Map<TopicPartition, OffsetSpec> latestOffSpec = new HashMap<>();
-            for (TopicPartition tp : partitions) {
-                timeOffSpec.put(tp, OffsetSpec.forTimestamp(timestamp));
-                earliestOffSpec.put(tp, OffsetSpec.earliest());
-                latestOffSpec.put(tp, OffsetSpec.latest());
-            }
+            // 构建三种 OffsetSpec 查询
+            Map<TopicPartition, OffsetSpec> timeSpec = partitions.stream()
+                    .collect(Collectors.toMap(tp -> tp, tp -> OffsetSpec.forTimestamp(timestamp)));
+            Map<TopicPartition, OffsetSpec> earliestSpec = partitions.stream()
+                    .collect(Collectors.toMap(tp -> tp, tp -> OffsetSpec.earliest()));
+            Map<TopicPartition, OffsetSpec> latestSpec = partitions.stream()
+                    .collect(Collectors.toMap(tp -> tp, tp -> OffsetSpec.latest()));
 
-            // 3. 批量查询 offsets
-            ListOffsetsResult timeResult = client.listOffsets(timeOffSpec);
-            ListOffsetsResult earliestResult = client.listOffsets(earliestOffSpec);
-            ListOffsetsResult latestResult = client.listOffsets(latestOffSpec);
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> timeResults = timeResult.all().get();
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> earliestResults = earliestResult.all().get();
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> latestResults = latestResult.all().get();
+            // 并行查询三种 offsets
+            CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> timeFuture =
+                    client.listOffsets(timeSpec).all().toCompletionStage().toCompletableFuture();
+            CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> earliestFuture =
+                    client.listOffsets(earliestSpec).all().toCompletionStage().toCompletableFuture();
+            CompletableFuture<Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo>> latestFuture =
+                    client.listOffsets(latestSpec).all().toCompletionStage().toCompletableFuture();
 
-            // 4. 按分区整理结果
+            CompletableFuture.allOf(timeFuture, earliestFuture, latestFuture).join();
+
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> timeResults = timeFuture.get();
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> earliestResults = earliestFuture.get();
+            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> latestResults = latestFuture.get();
+
+            // 按分区整理结果
             for (TopicPartition tp : partitions) {
-                ListOffsetsResult.ListOffsetsResultInfo timeInfo = timeResults.get(tp);
-                long timeOffset = timeInfo != null ? timeInfo.offset() : -1;
-                ListOffsetsResult.ListOffsetsResultInfo earliestInfo = earliestResults.get(tp);
-                long earliestOffset = earliestInfo != null ? earliestInfo.offset() : -1;
-                ListOffsetsResult.ListOffsetsResultInfo latestInfo = latestResults.get(tp);
-                long latestOffset = latestInfo != null ? latestInfo.offset() : -1;
+                long timeOffset = timeResults.get(tp) != null ? timeResults.get(tp).offset() : -1;
+                long earliestOffset = earliestResults.get(tp) != null ? earliestResults.get(tp).offset() : -1;
+                long latestOffset = latestResults.get(tp) != null ? latestResults.get(tp).offset() : -1;
                 result.add(new TopicOffset(
                         tp,
                         timeOffset == -1 ? earliestOffset : timeOffset,
@@ -216,7 +290,6 @@ public class AdminManger {
             }
         } catch (Exception e) {
             logger.error("跟时间获取偏移量失败，clusterId: {}, topic: {}", clusterId, topic, e);
-            return result;
         }
         return result;
     }

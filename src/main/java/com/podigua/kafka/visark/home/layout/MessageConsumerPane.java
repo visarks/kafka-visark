@@ -10,7 +10,6 @@ import javafx.scene.control.TabPane;
  * 消息使用者窗格
  *
  * @author podigua
- * @date 2024/03/25
  */
 public class MessageConsumerPane extends ContentBorderPane {
     private final ClusterNode value;
@@ -20,7 +19,7 @@ public class MessageConsumerPane extends ContentBorderPane {
         ShowConsumerMemberPane member = new ShowConsumerMemberPane(value.clusterId(), value.label());
         ShowConsumerOffsetPane offset = new ShowConsumerOffsetPane(value.clusterId(), value.label());
         this.value = value;
-//        this.setTop(detail);
+        this.setTop(detail);
         TabPane tab = new TabPane();
         tab.getTabs().addAll(tab(Messages.members(), member), tab(Messages.offset(), offset));
         this.setCenter(tab);

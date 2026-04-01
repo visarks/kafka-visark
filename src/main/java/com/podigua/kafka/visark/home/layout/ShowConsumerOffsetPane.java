@@ -13,8 +13,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -28,7 +26,6 @@ import java.util.List;
  * 显示 consumer offset
  *
  * @author podigua
- * @date 2024/03/23
  */
 public class ShowConsumerOffsetPane extends BorderPane {
     /**
@@ -57,7 +54,7 @@ public class ShowConsumerOffsetPane extends BorderPane {
     /**
      * 过滤 器
      */
-    private FilteredList<ConsumerOffset> filters = new FilteredList<>(rows);
+    private final FilteredList<ConsumerOffset> filters = new FilteredList<>(rows);
 
     public ShowConsumerOffsetPane(String clusterId, String groupId) {
         this.clusterId = clusterId;
@@ -72,19 +69,17 @@ public class ShowConsumerOffsetPane extends BorderPane {
         this.filter.setPromptText(Messages.filter());
         FontIcon icon = NodeUtils.clear(() -> filter.setText(""));
         filter.setRight(icon);
-        filter.textProperty().addListener((observable, oldValue, newValue) -> {
-            filters.predicateProperty().set(node -> {
-                if (node == null || !StringUtils.hasText(newValue)) {
-                    return true;
-                }
-                return node.topic().toLowerCase().contains(newValue.toLowerCase());
-            });
-        });
+        filter.textProperty().addListener((_, _, newValue) -> filters.predicateProperty().set(node -> {
+            if (node == null || !StringUtils.hasText(newValue)) {
+                return true;
+            }
+            return node.topic().toLowerCase().contains(newValue.toLowerCase());
+        }));
         this.filter.setPrefWidth(220);
         ToolBar toolBar = new ToolBar();
         search.setGraphic(searchIcon);
         search.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.ACCENT);
-        search.setOnAction(event -> reload());
+        search.setOnAction(_ -> reload());
         toolBar.getItems().addAll(filter, new Separator(Orientation.VERTICAL), search);
         this.setTop(toolBar);
     }
@@ -93,7 +88,7 @@ public class ShowConsumerOffsetPane extends BorderPane {
         LoadingEvent.LOADING.publish();
         this.rows.clear();
         QueryConsumerOffsetTask task = new QueryConsumerOffsetTask(clusterId, groupId);
-        task.setOnSucceeded(event -> {
+        task.setOnSucceeded(_ -> {
             try {
                 LoadingEvent.STOP.publish();
                 List<ConsumerOffset> offsets = task.get();
@@ -102,11 +97,9 @@ public class ShowConsumerOffsetPane extends BorderPane {
                 throw new RuntimeException(e);
             }
         });
-        task.setOnCancelled(event -> {
-            Platform.runLater(() -> {
-                throw new RuntimeException(event.getSource().getException());
-            });
-        });
+        task.setOnCancelled(event -> Platform.runLater(() -> {
+            throw new RuntimeException(event.getSource().getException());
+        }));
         Thread.ofVirtual().start(task);
     }
 
