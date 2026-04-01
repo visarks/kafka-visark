@@ -167,6 +167,7 @@
                         <option>-XX:G1MixedGCCountTarget=1</option>
                         <option>-XX:MaxGCPauseMillis=30</option>
                         <option>-Dprism.maxvram=2G</option>
+                        <option>-Dprism.order=es2</option>
                     </options>
                 </configuration>
             </plugin>
