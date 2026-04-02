@@ -1,0 +1,242 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 创建 tag 时自动触发
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # macOS ARM64
+          - os: macos-15-arm64
+            arch: arm64
+            type: dmg
+            artifact: *.dmg
+          - os: macos-15-arm64
+            arch: arm64
+            type: pkg
+            artifact: *.pkg
+          # macOS x86_64
+          - os: macos-15-intel
+            arch: x86_64
+            type: dmg
+            artifact: *.dmg
+          - os: macos-15-intel
+            arch: x86_64
+            type: pkg
+            artifact: *.pkg
+          # Windows
+          - os: windows-2022
+            arch: x86_64
+            type: exe
+            artifact: *.exe
+          - os: windows-2022
+            arch: x86_64
+            type: msi
+            artifact: *.msi
+    runs-on: ${{ matrix.os }}
+    env:
+      APP_VERSION: ""
+
+    steps:
+      - name: 检出项目
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 需要完整历史以获取 tag 信息
+
+      - name: 设置 Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+          cache: 'maven'
+
+      # Windows 特定配置
+      - name: Configure WiX Toolset (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $wixPaths = @(
+            "${env:ProgramFiles(x86)}\WiX Toolset v3.14\bin",
+            "${env:ProgramFiles}\WiX Toolset v3.14\bin",
+            "${env:ProgramFiles(x86)}\WiX Toolset v3.11\bin",
+            "${env:ProgramFiles}\WiX Toolset v3.11\bin",
+            "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+            "C:\Program Files\WiX Toolset v3.14\bin"
+          )
+
+          $foundPath = $null
+          foreach ($path in $wixPaths) {
+            if (Test-Path "$path\light.exe") {
+              $foundPath = $path
+              Write-Output "Found WiX Toolset at: $path"
+              break
+            }
+          }
+
+          if ($null -eq $foundPath) {
+            $whereResult = where.exe light.exe 2>&1
+            if ($whereResult -match "light\.exe") {
+              $foundPath = Split-Path $whereResult -Parent
+              Write-Output "Found WiX Toolset using where command at: $foundPath"
+            }
+          }
+
+          if ($null -eq $foundPath) {
+            Write-Error "Could not find WiX Toolset installation."
+            exit 1
+          }
+
+          $env:PATH = "$foundPath;$env:PATH"
+          echo "$foundPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Output "Added WiX Toolset to PATH: $foundPath"
+
+      - name: Configure Maven settings (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Set-WinSystemLocale -SystemLocale zh-CN
+          Set-WinHomeLocation -GeoId 244
+          Set-WinUserLanguageList -LanguageList zh-CN -Force
+
+          $m2Path = "$env:USERPROFILE\.m2"
+          if (-not (Test-Path $m2Path)) {
+            New-Item -Path $m2Path -ItemType Directory | Out-Null
+          }
+
+          $settingsContent = @"
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>aliyunmaven</id>
+                <mirrorOf>central</mirrorOf>
+                <name>阿里云公共仓库</name>
+                <url>https://maven.aliyun.com/repository/public</url>
+              </mirror>
+            </mirrors>
+            <profiles>
+              <profile>
+                <id>default</id>
+                <repositories>
+                  <repository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>default</activeProfile>
+            </activeProfiles>
+          </settings>
+          "@
+
+          $settingsContent | Out-File -FilePath "$m2Path\settings.xml" -Encoding UTF8
+
+      - name: 解析版本号
+        id: get-version
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            # Windows 使用 PowerShell
+            VERSION=$(powershell -Command "(Get-Content pom.xml -Raw) -match '<version>([\d\.]+)' | ForEach-Object { \$matches[1] }")
+          else
+            VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          fi
+          VERSION=$(echo "$VERSION" | sed 's/-SNAPSHOT$//')
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ 项目版本: $VERSION"
+
+      - name: 验证 Java
+        run: |
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+
+      - name: 执行打包
+        run: |
+          mvn clean jfx:package -DAPP_TYPE=${{ matrix.type }}
+
+      - name: 列举生成的构建物
+        shell: bash
+        run: |
+          ls -lh target/javafx/ 2>/dev/null || dir target\\javafx
+
+      - name: 上传构建物
+        uses: actions/upload-artifact@v4
+        with:
+          name: kafka-visark-${{ env.APP_VERSION }}-${{ runner.os }}-${{ matrix.arch }}-${{ matrix.type }}
+          path: target/javafx/${{ matrix.artifact }}
+          retention-days: 1  # 短期保留，release 会永久保存
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: 检出项目
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 解析版本号
+        id: get-version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Release 版本: $VERSION"
+
+      - name: 下载所有构建物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: kafka-visark-${{ env.APP_VERSION }}-*
+          merge-multiple: false
+
+      - name: 列举下载的构建物
+        run: |
+          echo "--- 所有构建物 ---"
+          find artifacts -type f -exec ls -lh {} \;
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: kafka-visark v${{ env.APP_VERSION }}
+          body: |
+            ## kafka-visark v${{ env.APP_VERSION }}
+
+            ### 下载
+
+            | 平台 | 架构 | 格式 | 文件 |
+            |------|------|------|------|
+            | macOS | ARM64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64.dmg` |
+            | macOS | ARM64 | PKG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64.pkg` |
+            | macOS | x86_64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.dmg` |
+            | macOS | x86_64 | PKG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.pkg` |
+            | Windows | x86_64 | EXE | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64.exe` |
+            | Windows | x86_64 | MSI | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64.msi` |
+
+            ### 更新日志
+
+            请查看 [commit 历史](https://github.com/${{ github.repository }}/commits/v${{ env.APP_VERSION }}) 了解变更详情。
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*
+          token: ${{ secrets.GITHUB_TOKEN }}
