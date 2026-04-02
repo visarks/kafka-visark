@@ -16,28 +16,16 @@ jobs:
             arch: arm64
             type: dmg
             artifact: "*.dmg"
-          - os: macos-15-arm64
-            arch: arm64
-            type: pkg
-            artifact: "*.pkg"
           # macOS x86_64
           - os: macos-15-intel
             arch: x86_64
             type: dmg
             artifact: "*.dmg"
-          - os: macos-15-intel
-            arch: x86_64
-            type: pkg
-            artifact: "*.pkg"
           # Windows
           - os: windows-2022
             arch: x86_64
             type: exe
             artifact: "*.exe"
-          - os: windows-2022
-            arch: x86_64
-            type: msi
-            artifact: "*.msi"
     runs-on: ${{ matrix.os }}
     env:
       APP_VERSION: ""
@@ -51,7 +39,7 @@ jobs:
       - name: 设置 Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '26'
           distribution: 'zulu'
           cache: 'maven'
 
@@ -225,12 +213,9 @@ jobs:
 
             | 平台 | 架构 | 格式 | 文件 |
             |------|------|------|------|
-            | macOS | ARM64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64.dmg` |
-            | macOS | ARM64 | PKG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64.pkg` |
-            | macOS | x86_64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.dmg` |
-            | macOS | x86_64 | PKG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64.pkg` |
-            | Windows | x86_64 | EXE | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64.exe` |
-            | Windows | x86_64 | MSI | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64.msi` |
+            | macOS | ARM64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64-dmg` |
+            | macOS | x86_64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64-dmg` |
+            | Windows | x86_64 | EXE | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64-exe` |
 
             ### 更新日志
 
