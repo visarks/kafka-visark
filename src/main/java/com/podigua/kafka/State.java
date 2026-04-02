@@ -8,11 +8,10 @@ import javafx.stage.Stage;
  * 状态
  *
  * @author podigua
- * @time 2024/04/01
  */
 public class State {
     public static final String PRODUCT="kafka-visark";
-    public static final String VERSION="v2.0.4";
+    public static final String VERSION="v"+System.getProperty("jpackage.app-version");
     public static final String URL = "https://www.visark.cn/store/releases/kafka-visark";
     public static final String GITHUB = "https://github.com/visarks/kafka-visark";
     public static final String HOME = "https://www.visark.cn";
