@@ -15,29 +15,29 @@ jobs:
           - os: macos-15-arm64
             arch: arm64
             type: dmg
-            artifact: *.dmg
+            artifact: "*.dmg"
           - os: macos-15-arm64
             arch: arm64
             type: pkg
-            artifact: *.pkg
+            artifact: "*.pkg"
           # macOS x86_64
           - os: macos-15-intel
             arch: x86_64
             type: dmg
-            artifact: *.dmg
+            artifact: "*.dmg"
           - os: macos-15-intel
             arch: x86_64
             type: pkg
-            artifact: *.pkg
+            artifact: "*.pkg"
           # Windows
           - os: windows-2022
             arch: x86_64
             type: exe
-            artifact: *.exe
+            artifact: "*.exe"
           - os: windows-2022
             arch: x86_64
             type: msi
-            artifact: *.msi
+            artifact: "*.msi"
     runs-on: ${{ matrix.os }}
     env:
       APP_VERSION: ""
@@ -206,7 +206,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: kafka-visark-${{ env.APP_VERSION }}-*
+          pattern: "kafka-visark-${{ env.APP_VERSION }}-*"
           merge-multiple: false
 
       - name: 列举下载的构建物
@@ -238,5 +238,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/**/*
+            "artifacts/**/*"
           token: ${{ secrets.GITHUB_TOKEN }}
