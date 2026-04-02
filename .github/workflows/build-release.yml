@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           # macOS ARM64
-          - os: macos-15-arm64
+          - os: macos-latest-arm
             arch: arm64
             type: dmg
             artifact: "*.dmg"
