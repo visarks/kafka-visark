@@ -4,7 +4,7 @@
     <a><img src='https://img.shields.io/badge/Java-26-green' alt='Java'></img></a>
     <a><img src='https://img.shields.io/badge/JavaFX-27-green' alt='JavaFX'></img></a>
     <a><img src='https://img.shields.io/badge/Kafka-4.2.0-orange' alt='Kafka'></img></a>
-    <a><img src='https://img.shields.io/badge/License-MIT-green' alt='License'></img></a>
+    <a><img src='https://img.shields.io/badge/License-Apache%202.0-green' alt='License'></img></a>
 </p>
 
 <p align="center">
@@ -84,4 +84,4 @@ https://www.visark.cn/
 
 ## License
 
-MIT License
+Apache License 2.0

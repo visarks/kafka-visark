@@ -98,37 +98,21 @@ jobs:
 
           $settingsContent = @"
           <settings>
-            <mirrors>
-              <mirror>
-                <id>aliyunmaven</id>
-                <mirrorOf>central</mirrorOf>
-                <name>阿里云公共仓库</name>
-                <url>https://maven.aliyun.com/repository/public</url>
-              </mirror>
-            </mirrors>
             <profiles>
               <profile>
-                <id>default</id>
+                <id>gluon</id>
                 <repositories>
                   <repository>
-                    <id>central</id>
-                    <url>https://maven.aliyun.com/repository/public</url>
+                    <id>gluon</id>
+                    <url>https://nexus.gluonhq.com/nexus/content/repositories/releases/</url>
                     <releases><enabled>true</enabled></releases>
                     <snapshots><enabled>true</enabled></snapshots>
                   </repository>
                 </repositories>
-                <pluginRepositories>
-                  <pluginRepository>
-                    <id>central</id>
-                    <url>https://maven.aliyun.com/repository/public</url>
-                    <releases><enabled>true</enabled></releases>
-                    <snapshots><enabled>true</enabled></snapshots>
-                  </pluginRepository>
-                </pluginRepositories>
               </profile>
             </profiles>
             <activeProfiles>
-              <activeProfile>default</activeProfile>
+              <activeProfile>gluon</activeProfile>
             </activeProfiles>
           </settings>
           "@
@@ -182,7 +166,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 解析版本号
+      - name: 解析版本号b
         id: get-version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
