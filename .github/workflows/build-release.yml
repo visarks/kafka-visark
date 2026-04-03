@@ -154,6 +154,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
 
     steps:
       - name: 检出项目
@@ -202,5 +204,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            "artifacts/**/*"
+            artifacts/**/*.*
           token: ${{ secrets.GITHUB_TOKEN }}
