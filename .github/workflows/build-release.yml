@@ -11,6 +11,11 @@ jobs:
     strategy:
       matrix:
         include:
+          # macOS ARM64
+          - os: macos-14
+            arch: arm64
+            type: dmg
+            artifact: "*.dmg"
           # macOS x86_64
           - os: macos-15-intel
             arch: x86_64
@@ -195,6 +200,7 @@ jobs:
 
             | 平台 | 架构 | 格式 | 文件 |
             |------|------|------|------|
+            | macOS | ARM64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64-dmg` |
             | macOS | x86_64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64-dmg` |
             | Windows | x86_64 | EXE | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64-exe` |
 
