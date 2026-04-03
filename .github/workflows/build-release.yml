@@ -115,6 +115,7 @@ jobs:
       - name: 上传构建物
         uses: actions/upload-artifact@v4
         with:
+          name: kafka-visark-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.type }}
           path: target/javafx/${{ matrix.artifact }}
           retention-days: 1
 
