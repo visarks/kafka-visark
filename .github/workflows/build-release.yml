@@ -83,42 +83,6 @@ jobs:
           echo "$foundPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           Write-Output "Added WiX Toolset to PATH: $foundPath"
 
-      - name: Configure Maven settings (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          Set-WinSystemLocale -SystemLocale zh-CN
-          Set-WinHomeLocation -GeoId 244
-          Set-WinUserLanguageList -LanguageList zh-CN -Force
-
-          $m2Path = "$env:USERPROFILE\.m2"
-          if (-not (Test-Path $m2Path)) {
-            New-Item -Path $m2Path -ItemType Directory | Out-Null
-          }
-
-          $settingsContent = @"
-          <settings>
-            <profiles>
-              <profile>
-                <id>gluon</id>
-                <repositories>
-                  <repository>
-                    <id>gluon</id>
-                    <url>https://nexus.gluonhq.com/nexus/content/repositories/releases/</url>
-                    <releases><enabled>true</enabled></releases>
-                    <snapshots><enabled>true</enabled></snapshots>
-                  </repository>
-                </repositories>
-              </profile>
-            </profiles>
-            <activeProfiles>
-              <activeProfile>gluon</activeProfile>
-            </activeProfiles>
-          </settings>
-          "@
-
-          $settingsContent | Out-File -FilePath "$m2Path\settings.xml" -Encoding UTF8
-
       - name: 解析版本号
         id: get-version
         shell: bash
@@ -151,7 +115,6 @@ jobs:
       - name: 上传构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.type }}
           path: target/javafx/${{ matrix.artifact }}
           retention-days: 1
 
@@ -200,9 +163,9 @@ jobs:
 
             | 平台 | 架构 | 格式 | 文件 |
             |------|------|------|------|
-            | macOS | ARM64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-arm64-dmg` |
-            | macOS | x86_64 | DMG | `kafka-visark-${{ env.APP_VERSION }}-macos-x86_64-dmg` |
-            | Windows | x86_64 | EXE | `kafka-visark-${{ env.APP_VERSION }}-windows-x86_64-exe` |
+            | macOS | arm64 | dmg | `kafka-visark-darwin-arm64-${{ env.APP_VERSION }}.dmg` |
+            | macOS | x86_64 | dmg | `kafka-visark-darwin-x86_64-${{ env.APP_VERSION }}.dmg` |
+            | Windows | x86_64 | exe | `kafka-visark-windows-x86_64-${{ env.APP_VERSION }}.exe` |
 
             ### 更新日志
 
