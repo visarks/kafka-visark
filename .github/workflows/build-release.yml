@@ -146,9 +146,9 @@ jobs:
       - name: 上传构建物
         uses: actions/upload-artifact@v4
         with:
-          name: kafka-visark-${{ env.APP_VERSION }}-${{ runner.os }}-${{ matrix.arch }}-${{ matrix.type }}
+          name: kafka-visark-${{ env.APP_VERSION }}-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.type }}
           path: target/javafx/${{ matrix.artifact }}
-          retention-days: 1  # 短期保留，release 会永久保存
+          retention-days: 1
 
   release:
     needs: build
@@ -173,13 +173,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: "kafka-visark-${{ env.APP_VERSION }}-*"
-          merge-multiple: false
 
       - name: 列举下载的构建物
         run: |
           echo "--- 所有构建物 ---"
-          find artifacts -type f -exec ls -lh {} \;
+          find artifacts -type f 2>/dev/null || ls -laR artifacts/ || echo "目录不存在"
+          echo "--- 目录结构 ---"
+          pwd
+          ls -la
 
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
