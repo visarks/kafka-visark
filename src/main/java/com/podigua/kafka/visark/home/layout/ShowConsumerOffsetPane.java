@@ -124,7 +124,7 @@ public class ShowConsumerOffsetPane extends BorderPane {
         TableColumn<ConsumerOffset, String> offset = new TableColumn<>("Offset");
         offset.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().offset() + ""));
 
-        TableColumn<ConsumerOffset, String> tag = new TableColumn<>("Tag");
+        TableColumn<ConsumerOffset, String> tag = new TableColumn<>("Lag");
         tag.setCellValueFactory(param -> new SimpleStringProperty((param.getValue().end() - param.getValue().offset()) + ""));
 
         TableColumn<ConsumerOffset, String> host = new TableColumn<>("Host");
